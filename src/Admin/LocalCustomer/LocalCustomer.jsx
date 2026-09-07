@@ -20,7 +20,7 @@ const PageLoader = () => (
   </div>
 );
 
-export default function LocalCustomer() {
+export default function Localcustomer() {
   const initialFormData = {
     customerName: "", state: "", district: "", mobileNumber: "", email: "", address: "",
     customerType: "Customer", agentName: "", agentContact: "", agentEmail: "", agentState: "", agentDistrict: "",

@@ -2,9 +2,8 @@ import { Routes, Route } from 'react-router-dom';
 import Home from "./Home/Home";
 import Login from './Admin/Login/Login';
 import Inventory from './Admin/Inventory/Inventory';
-import Tracking from './Admin/Tracking/Tracking';
 import List from './Admin/List/List';
-import LocalCustomer from './Admin/LocalCustomer/Localcustomer';
+import Localcustomer from './Admin/LocalCustomer/Localcustomer';
 import Report from './Admin/Report/Report';
 import ProtectedRoute from './ProtectedRoute';
 import Location from './Admin/Location/Location';
@@ -34,7 +33,7 @@ const AllRoutes = () => {
         <Route path="/listing" element={<List />} />
         <Route path="/report" element={<Report />} />
         <Route path="/tracking" element={<Tracking />} />
-        <Route path="/direct-customer" element={<LocalCustomer />} />
+        <Route path="/direct-customer" element={<Localcustomer />} />
         <Route path="/location" element={<Location />} />
         <Route path="/direct-enquiry" element={<Direct />} />
         <Route path="/dispatch-customers" element={<Dispatch />} />
