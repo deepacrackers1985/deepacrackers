@@ -1,4 +1,4 @@
-# robots.txt for Deepa Crackers (https://deepacrackers.com)
+# robots.txt for Deepa Crackers (https://www.deepacrackers.com)
 User-agent: *
 Allow: /
 Allow: /about-us
@@ -21,4 +21,4 @@ Disallow: /promo-code
 Disallow: /sales-analysis
 
 # Sitemap location
-Sitemap: https://deepacrackers.com/sitemap.xml
+Sitemap: https://www.deepacrackers.com/sitemap.xml
