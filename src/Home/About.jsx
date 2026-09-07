@@ -61,6 +61,9 @@ const TAG_PILLS = [
 ];
 
 export default function About() {
+  useEffect(() => {
+    document.title = "About Us | Deepa Crackers - 40+ Years of Sivakasi Fireworks Trust";
+  }, []);
   return (
     <PageShell>
       <div className="pt-20 pb-12 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-16">

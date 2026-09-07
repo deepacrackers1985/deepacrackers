@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Shield, AlertTriangle, CheckCircle, XCircle, Flame, Droplets, Eye,
@@ -136,6 +136,9 @@ const dontsData = [
 ];
 
 export default function Safety() {
+  useEffect(() => {
+    document.title = "Crackers Safety Tips & Protocol | Deepa Crackers Sivakasi";
+  }, []);
   return (
     <PageShell orbColor1="#dc2626" orbColor2="#000000" orbColor3="#ffffff">
       <div className="pt-24 pb-12 space-y-12">

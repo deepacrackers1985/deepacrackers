@@ -1,0 +1,24 @@
+# robots.txt for Deepa Crackers (https://deepacrackers.com)
+User-agent: *
+Allow: /
+Allow: /about-us
+Allow: /safety-tips
+Allow: /contact-us
+Allow: /status
+
+# Disallow private admin and back-office routes from indexing
+Disallow: /admin
+Disallow: /inventory
+Disallow: /listing
+Disallow: /report
+Disallow: /tracking
+Disallow: /direct-customer
+Disallow: /location
+Disallow: /direct-enquiry
+Disallow: /dispatch-customers
+Disallow: /banner
+Disallow: /promo-code
+Disallow: /sales-analysis
+
+# Sitemap location
+Sitemap: https://deepacrackers.com/sitemap.xml

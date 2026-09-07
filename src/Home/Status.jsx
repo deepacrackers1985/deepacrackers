@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Package, Truck, CheckCircle, Clock, MapPin, Phone, Calendar,
@@ -108,6 +108,9 @@ function ProgressStepper({ status, type = "booking" }) {
 }
 
 export default function Status() {
+  useEffect(() => {
+    document.title = "Track Crackers Order Status | Deepa Crackers Online Purchase";
+  }, []);
   const [searchForm, setSearchForm] = useState({ mobile_number: "" });
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);

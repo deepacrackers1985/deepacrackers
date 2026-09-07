@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Phone, Mail, Globe, MessageSquare, Clock, FileText } from "lucide-react";
 import PageShell from "./PageShell";
@@ -41,6 +41,9 @@ const QUICK_ACTIONS = [
 ];
 
 export default function Contact() {
+  useEffect(() => {
+    document.title = "Contact Deepa Crackers | Buy Sivakasi Crackers Online & Wholesale Enquiries";
+  }, []);
   return (
     <PageShell>
       <div className="pt-20 pb-12 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-12">

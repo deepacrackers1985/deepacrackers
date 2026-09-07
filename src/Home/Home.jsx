@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Phone, Search, ArrowRight, ShieldCheck, FileText, LayoutGrid, List as ListIcon, X, Plus, Minus, ChevronLeft, ChevronRight, Bot, CheckCircle, MapPin, Tag, Star } from 'lucide-react';
+import { Sparkles, Phone, Search, ArrowRight, ShieldCheck, FileText, LayoutGrid, List as ListIcon, X, Plus, Minus, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Bot, CheckCircle, MapPin, Tag, Star, Truck, Flame, HelpCircle, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -289,6 +289,12 @@ export default function Home() {
   // Why modal: shown only when user clicks the "?" button
   const [showWhyModal, setShowWhyModal] = useState(false);
 
+  // SEO FAQ Accordion toggle state (first item open by default)
+  const [openFaqIndex, setOpenFaqIndex] = useState(0);
+  const toggleFaq = (idx) => {
+    setOpenFaqIndex((prev) => (prev === idx ? null : idx));
+  };
+
 
   const [customer, setCustomer] = useState({
     name: "",
@@ -426,6 +432,7 @@ export default function Home() {
   };
 
   useEffect(() => {
+    document.title = "Deepa Crackers";
     fetchData();
   }, []);
 
@@ -2106,6 +2113,166 @@ export default function Home() {
             customerName={customer.name}
             totalAmount={finalCheckoutTotal}
           />
+
+          {/* SEO Content & Authority Section: Why Buy Crackers Online from Deepa Crackers */}
+          <section className="mt-14 space-y-8 max-w-7xl mx-auto">
+            {/* Primary SEO Authority Header (positioned at bottom to keep top catalog focused) */}
+            <div className="text-center space-y-3 pt-4 pb-2 max-w-4xl mx-auto px-2">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-950/80 border border-red-600/50 text-red-400 text-[10px] sm:text-xs font-black tracking-widest uppercase shadow-md">
+                <Sparkles className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                <span>Direct Sivakasi Factory Fireworks • 100% Certified Green Crackers</span>
+              </div>
+              
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase leading-tight">
+                Buy Crackers Online <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-amber-400 to-red-600">— Sivakasi Direct Factory Prices</span>
+              </h1>
+
+              <p className="text-xs sm:text-sm text-neutral-300 max-w-3xl mx-auto leading-relaxed">
+                Welcome to <strong className="text-white font-bold">Deepa Crackers</strong>, your premier online destination to <strong className="text-red-400 font-bold">buy crackers online</strong> at direct factory wholesale prices from Sivakasi. Explore our festive range of sparklers, flower pots, ground chakkars, aerial repeating sky shots, sound crackers &amp; family combo gift boxes with safe dispatch across Tamil Nadu &amp; India.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] text-neutral-400 font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-900/90 border border-white/10">
+                  <CheckCircle className="w-3 h-3 text-red-500" /> 40+ Years Trust
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-900/90 border border-white/10">
+                  <CheckCircle className="w-3 h-3 text-red-500" /> Direct Sivakasi Sourcing
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-900/90 border border-white/10">
+                  <CheckCircle className="w-3 h-3 text-red-500" /> Up to 80% Off MRP
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-900/90 border border-white/10">
+                  <CheckCircle className="w-3 h-3 text-red-500" /> Safe Delivery All Districts
+                </span>
+              </div>
+            </div>
+
+            <div className="text-center space-y-2 pt-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/60 border border-red-600/40 text-red-400 text-xs font-black uppercase tracking-wider">
+                <ShieldCheck className="w-3.5 h-3.5 text-red-500" />
+                <span>India's Trusted Fireworks Hub</span>
+              </div>
+              <h2 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                Why Buy Crackers Online from <span className="text-red-500">Deepa Crackers</span>?
+              </h2>
+              <p className="text-xs sm:text-sm text-neutral-400 max-w-2xl mx-auto">
+                Direct from the fireworks capital of Sivakasi to your doorstep with guaranteed safety, unbeatable wholesale discounts, and premium festive quality.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-5 rounded-2xl bg-neutral-950/80 border border-white/10 hover:border-red-600/40 transition-all space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-500">
+                  <Tag className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Direct Factory Wholesale Rates</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Save up to 80% on MRP with direct sourcing from licensed Sivakasi manufacturers. No middlemen, no festive price hikes.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-neutral-950/80 border border-white/10 hover:border-red-600/40 transition-all space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-500">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-white">100% Certified Green Crackers</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Compliant with CSIR-NEERI guidelines and Indian Explosives Act. Clean formulations with reduced particulate emissions.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-neutral-950/80 border border-white/10 hover:border-red-600/40 transition-all space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-500">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Secure Packaging &amp; Dispatch</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Heavy-duty corrugated boxes, moisture-proof seal, and certified transport parcel service across Tamil Nadu and all of India.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-neutral-950/80 border border-white/10 hover:border-red-600/40 transition-all space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-500">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-white">500+ Premium Varieties</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Sparklers, aerial sky shots, flower pots, spinning chakkars, musical rockets, sound crackers, and custom Diwali gift boxes.
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive FAQ Accordion (Matched with Schema.org JSON-LD FAQ) */}
+            <div className="mt-12 rounded-2xl bg-neutral-950/90 border border-white/15 p-6 md:p-8 space-y-6">
+              <div className="text-center space-y-1.5">
+                <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+                  Frequently Asked Questions (FAQ) — Buying Crackers Online
+                </h2>
+                <p className="text-xs text-neutral-400 max-w-xl mx-auto">
+                  Find fast answers to common questions about buying crackers online, delivery options, and payment methods.
+                </p>
+              </div>
+
+              <div className="space-y-3 max-w-4xl mx-auto">
+                {[
+                  {
+                    q: "How can I buy crackers online from Deepa Crackers?",
+                    a: "Buying crackers online is simple: browse our online product catalog, choose your favorite crackers or festive combo boxes, add them to your cart, and submit your order enquiry. Our dedicated team will confirm your order within 24 hours and arrange safe, secure transport dispatch directly to your doorstep."
+                  },
+                  {
+                    q: "Are Deepa Crackers authentic Sivakasi fireworks?",
+                    a: "Yes, 100%. Deepa Crackers sources directly from licensed Sivakasi manufacturing factories. With 40+ years of trusted heritage, we guarantee genuine Sivakasi quality, high safety standards, and factory direct wholesale prices."
+                  },
+                  {
+                    q: "Are these green crackers certified under government regulations?",
+                    a: "Yes, all our firecrackers are 100% legal green crackers manufactured in accordance with CSIR-NEERI norms, offering reduced emissions, low smoke, and authorized chemical compositions."
+                  },
+                  {
+                    q: "Do you deliver crackers across Tamil Nadu and other states in India?",
+                    a: "Yes, we arrange reliable transport parcel delivery across all districts of Tamil Nadu (Chennai, Coimbatore, Madurai, Trichy, Salem, Tirunelveli, etc.) and major cities across India with heavy-duty safety packing."
+                  },
+                  {
+                    q: "Can I get wholesale prices when I buy crackers in bulk?",
+                    a: "Yes! Deepa Crackers offers up to 80% discount off standard MRP with exclusive bulk purchase deals, corporate orders, and customized Diwali cracker gift hampers."
+                  }
+                ].map((faq, idx) => {
+                  const isOpen = openFaqIndex === idx;
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-white/10 bg-black/60 overflow-hidden transition-all"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleFaq(idx)}
+                        className="w-full px-4 py-3.5 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-bold text-white hover:text-red-400 transition-colors cursor-pointer"
+                      >
+                        <span>{faq.q}</span>
+                        {isOpen ? (
+                          <ChevronUp className="w-4 h-4 text-red-500 shrink-0" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-neutral-400 shrink-0" />
+                        )}
+                      </button>
+                      <AnimatePresence>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="px-4 pb-4 pt-1 text-xs text-neutral-300 leading-relaxed border-t border-white/5"
+                          >
+                            <p>{faq.a}</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
 
           {/* Footer */}
           <footer
