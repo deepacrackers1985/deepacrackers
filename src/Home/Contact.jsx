@@ -9,9 +9,9 @@ const CONTACT_CARDS = [
     title: "Store Location",
     content: [
       "Deepa Firecracker Shop",
-      "RS Road, Thiruthuraipoondi",
+      "17/5, R.S Rd, Thiruthuraipoondi",
       "Tamil Nadu — 614713",
-      { text: "View on Google Maps →", href: "https://maps.google.com/?q=Thiruthuraipoondi+Tamil+Nadu", target: "_blank" },
+      { text: "View on Google Maps →", href: "https://www.google.com/maps/place/Deepa+Crackers/@10.5361437,79.6372948,17z/data=!3m1!4b1!4m6!3m5!1s0x3a555958e1646a37:0xda60592338012835!8m2!3d10.5361437!4d79.6372948", target: "_blank" },
     ],
   },
   {
@@ -37,7 +37,7 @@ const QUICK_ACTIONS = [
   { icon: Phone, label: "Call Now", href: "tel:+918072897834" },
   { icon: MessageSquare, label: "WhatsApp", href: "https://wa.me/918072897834" },
   { icon: Mail, label: "Email", href: "mailto:deepatraders1985@gmail.com" },
-  { icon: MapPin, label: "Directions", href: "https://maps.google.com/?q=Thiruthuraipoondi+Tamil+Nadu" },
+  { icon: MapPin, label: "Directions", href: "https://www.google.com/maps/place/Deepa+Crackers/@10.5361437,79.6372948,17z/data=!3m1!4b1!4m6!3m5!1s0x3a555958e1646a37:0xda60592338012835!8m2!3d10.5361437!4d79.6372948" },
 ];
 
 export default function Contact() {
