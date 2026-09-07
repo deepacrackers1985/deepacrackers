@@ -3,7 +3,7 @@ import Home from "./Home/Home";
 import Login from './Admin/Login/Login';
 import Inventory from './Admin/Inventory/Inventory';
 import List from './Admin/List/List';
-import Localcustomer from './Admin/LocalCustomer/Localcustomer';
+import Customer from './Admin/Customer/Customer';
 import Report from './Admin/Report/Report';
 import ProtectedRoute from './ProtectedRoute';
 import Location from './Admin/Location/Location';
@@ -17,6 +17,7 @@ import Contact from './Home/Contact';
 import Promocode from './Admin/Promo/Promocode'
 import SalesAnalysis from './Admin/Sales/SalesAnalysis';
 import Status from './Home/Status';
+import Tracking from './Admin/Tracking/Tracking'
 
 const AllRoutes = () => {
   return (
@@ -33,7 +34,7 @@ const AllRoutes = () => {
         <Route path="/listing" element={<List />} />
         <Route path="/report" element={<Report />} />
         <Route path="/tracking" element={<Tracking />} />
-        <Route path="/direct-customer" element={<Localcustomer />} />
+        <Route path="/direct-customer" element={<Customer />} />
         <Route path="/location" element={<Location />} />
         <Route path="/direct-enquiry" element={<Direct />} />
         <Route path="/dispatch-customers" element={<Dispatch />} />
