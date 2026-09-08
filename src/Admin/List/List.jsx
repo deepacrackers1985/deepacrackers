@@ -3,13 +3,36 @@ import Modal from "react-modal";
 import Sidebar from "../Sidebar/Sidebar";
 import "../../App.css";
 import { API_BASE_URL } from "../../../Config";
-import { FaEye, FaEdit, FaTrash, FaArrowLeft, FaArrowRight, FaExclamationTriangle, FaToggleOn, FaToggleOff, FaLayerGroup, FaCheck, FaTimes } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaArrowLeft, FaArrowRight, FaExclamationTriangle, FaToggleOn, FaToggleOff, FaLayerGroup, FaCheck, FaTimes, FaPlay, FaYoutube } from "react-icons/fa";
 import Logout from "../Logout";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { getTamilName, ensureTamilFont, renderTamilTextToDataURL } from "../../utils/tamilTranslation";
 
 Modal.setAppElement("#root");
+
+const getYouTubeEmbedUrl = (url) => {
+  if (!url || typeof url !== "string") return "";
+  const trimmed = url.trim();
+  const vMatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/i);
+  if (vMatch && vMatch[1]) {
+    return `https://www.youtube-nocookie.com/embed/${vMatch[1]}?autoplay=1&rel=0&modestbranding=1`;
+  }
+  return "";
+};
+
+const extractYoutubeUrl = (product) => {
+  if (!product) return "";
+  if (product.youtube_link && typeof product.youtube_link === "string" && product.youtube_link.trim()) {
+    return product.youtube_link.trim();
+  }
+  const desc = product.description || "";
+  const matchTag = desc.match(/\[yt:(https?:\/\/[^\]]+)\]/i);
+  if (matchTag && matchTag[1]) return matchTag[1].trim();
+  const matchUrl = desc.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)[^\s\)]+)/i);
+  if (matchUrl && matchUrl[1]) return matchUrl[1].trim();
+  return "";
+};
 
 const Spinner = ({ size = 'sm', color = 'text-white' }) => (
   <svg className={`animate-spin ${size === 'sm' ? 'w-4 h-4' : 'w-8 h-8'} ${color}`} fill="none" viewBox="0 0 24 24">
@@ -47,10 +70,16 @@ export default function List() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rateChangeSearchQuery, setRateChangeSearchQuery] = useState("");
   const [editedRates, setEditedRates] = useState({});
-  const [formData, setFormData] = useState({
+  const [activeYtVideo, setActiveYtVideo] = useState(null);
+
+  const INITIAL_FORM_DATA = {
     productname: "", serial_number: "", price: "", dprice: "", discount: "", per: "",
-    product_type: "", description: "", box_count: 1, images: [], existingImages: [], imagesToDelete: [],
-  });
+    product_type: "", description: "", youtube_link: "", dimension: "", colour: "",
+    contain: "", chemical_composition: "", loudness: "", duration: "", safety_distance: "", visual_effects: "", how_to_ignite: "",
+    box_count: 1, images: [], existingImages: [], imagesToDelete: [],
+  };
+
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
   // ── category bulk toggle states ───────────────────────────────────────────
   const [selectedCategoryForToggle, setSelectedCategoryForToggle] = useState("");
@@ -86,12 +115,90 @@ export default function List() {
     fetchData(`${API_BASE_URL}/api/products`, "Failed to fetch products", (data) => {
       const normalizedData = data.data
         .filter((product) => product.product_type !== "gift_box_dealers")
-        .map((product) => ({
-          ...product,
-          images: product.image ? (typeof product.image === "string" ? JSON.parse(product.image) : product.image) : [],
-          box_count: product.box_count || 1,
-          dprice: product.dprice || "0",
-        }))
+        .map((product) => {
+          let ytLink = product.youtube_link || "";
+          let dimension = product.dimension || "";
+          let colour = product.colour || "";
+          let contain = product.contain || "";
+          let chemical_composition = product.chemical_composition || "";
+          let loudness = product.loudness || "";
+          let duration = product.duration || "";
+          let safety_distance = product.safety_distance || "";
+          let visual_effects = product.visual_effects || "";
+          let how_to_ignite = product.how_to_ignite || "";
+
+          const desc = product.description || "";
+          if (!ytLink && desc) {
+            const m = desc.match(/\[yt:(https?:\/\/[^\]]+)\]/i);
+            if (m && m[1]) ytLink = m[1].trim();
+          }
+          if (!dimension && desc) {
+            const dm = desc.match(/\[dim:([^\]]+)\]/i);
+            if (dm && dm[1]) dimension = dm[1].trim();
+          }
+          if (!colour && desc) {
+            const cm = desc.match(/\[col:([^\]]+)\]/i);
+            if (cm && cm[1]) colour = cm[1].trim();
+          }
+          if (!contain && desc) {
+            const m = desc.match(/\[contain:([^\]]+)\]/i);
+            if (m && m[1]) contain = m[1].trim();
+          }
+          if (!chemical_composition && desc) {
+            const m = desc.match(/\[chem:([^\]]+)\]/i);
+            if (m && m[1]) chemical_composition = m[1].trim();
+          }
+          if (!loudness && desc) {
+            const m = desc.match(/\[loud:([^\]]+)\]/i);
+            if (m && m[1]) loudness = m[1].trim();
+          }
+          if (!duration && desc) {
+            const m = desc.match(/\[dur:([^\]]+)\]/i);
+            if (m && m[1]) duration = m[1].trim();
+          }
+          if (!safety_distance && desc) {
+            const m = desc.match(/\[safety:([^\]]+)\]/i);
+            if (m && m[1]) safety_distance = m[1].trim();
+          }
+          if (!visual_effects && desc) {
+            const m = desc.match(/\[effect:([^\]]+)\]/i);
+            if (m && m[1]) visual_effects = m[1].trim();
+          }
+          if (!how_to_ignite && desc) {
+            const m = desc.match(/\[ignite:([^\]]+)\]/i);
+            if (m && m[1]) how_to_ignite = m[1].trim();
+          }
+
+          const cleanDesc = desc
+            .replace(/\[yt:https?:\/\/[^\]]+\]/gi, "")
+            .replace(/\[dim:[^\]]+\]/gi, "")
+            .replace(/\[col:[^\]]+\]/gi, "")
+            .replace(/\[contain:[^\]]+\]/gi, "")
+            .replace(/\[chem:[^\]]+\]/gi, "")
+            .replace(/\[loud:[^\]]+\]/gi, "")
+            .replace(/\[dur:[^\]]+\]/gi, "")
+            .replace(/\[safety:[^\]]+\]/gi, "")
+            .replace(/\[effect:[^\]]+\]/gi, "")
+            .replace(/\[ignite:[^\]]+\]/gi, "")
+            .trim();
+          return {
+            ...product,
+            images: product.image ? (typeof product.image === "string" ? JSON.parse(product.image) : product.image) : [],
+            box_count: product.box_count || 1,
+            dprice: product.dprice || product.price || "0",
+            description: cleanDesc,
+            youtube_link: ytLink,
+            dimension,
+            colour,
+            contain,
+            chemical_composition,
+            loudness,
+            duration,
+            safety_distance,
+            visual_effects,
+            how_to_ignite,
+          };
+        })
         .sort((a, b) => a.serial_number.localeCompare(b.serial_number));
       setProducts(normalizedData);
       setToggleStates(
@@ -293,25 +400,59 @@ export default function List() {
   const handleSubmit = async (e, isEdit) => {
     e.preventDefault();
     setDiscountWarning(""); setError("");
-    if (!formData.productname.trim() || !formData.serial_number.trim() || !formData.price || !formData.dprice ||
+    if (!formData.productname.trim() || !formData.serial_number.trim() || !formData.price ||
       !formData.per || formData.discount === "" || !formData.product_type) {
       setError("Please fill in all required fields"); return;
     }
     const price = Number.parseFloat(formData.price);
-    const dprice = Number.parseFloat(formData.dprice || 0);
+    const dprice = Number.parseFloat(formData.dprice || formData.price || 0);
     const discount = Number.parseFloat(formData.discount);
     if (isNaN(price) || price < 0) { setError("Price must be a valid positive number"); return; }
-    if (isNaN(dprice) || dprice < 0) { setError("Direct Customer Price must be a valid positive number"); return; }
+    if (isNaN(dprice) || dprice < 0) { setError("Price must be a valid positive number"); return; }
     if (isNaN(discount) || discount < 0 || discount > 100) { setError("Discount must be a valid number between 0 and 100%"); return; }
     if (formData.product_type === "gift_box_dealers") { setError('Product type "gift_box_dealers" is not allowed'); return; }
+    const cleanDesc = (formData.description || "").trim();
+    const ytLink = (formData.youtube_link || "").trim();
+    const dimension = (formData.dimension || "").trim();
+    const colour = (formData.colour || "").trim();
+    const contain = (formData.contain || "").trim();
+    const chemical_composition = (formData.chemical_composition || "").trim();
+    const loudness = (formData.loudness || "").trim();
+    const duration = (formData.duration || "").trim();
+    const safety_distance = (formData.safety_distance || "").trim();
+    const visual_effects = (formData.visual_effects || "").trim();
+    const how_to_ignite = (formData.how_to_ignite || "").trim();
+
+    let fullDesc = cleanDesc;
+    if (contain) fullDesc += `\n[contain:${contain}]`;
+    if (chemical_composition) fullDesc += `\n[chem:${chemical_composition}]`;
+    if (loudness) fullDesc += `\n[loud:${loudness}]`;
+    if (duration) fullDesc += `\n[dur:${duration}]`;
+    if (safety_distance) fullDesc += `\n[safety:${safety_distance}]`;
+    if (visual_effects) fullDesc += `\n[effect:${visual_effects}]`;
+    if (how_to_ignite) fullDesc += `\n[ignite:${how_to_ignite}]`;
+    if (dimension) fullDesc += `\n[dim:${dimension}]`;
+    if (colour) fullDesc += `\n[col:${colour}]`;
+    if (ytLink) fullDesc += `\n[yt:${ytLink}]`;
+
     const formDataToSend = new FormData();
     formDataToSend.append("productname", formData.productname);
     formDataToSend.append("serial_number", formData.serial_number);
     formDataToSend.append("price", formData.price);
-    formDataToSend.append("dprice", formData.dprice || "0");
+    formDataToSend.append("dprice", formData.dprice || formData.price || "0");
     formDataToSend.append("per", formData.per);
     formDataToSend.append("discount", formData.discount);
-    formDataToSend.append("description", formData.description || "");
+    formDataToSend.append("description", fullDesc.trim());
+    formDataToSend.append("youtube_link", ytLink);
+    formDataToSend.append("dimension", dimension);
+    formDataToSend.append("colour", colour);
+    formDataToSend.append("contain", contain);
+    formDataToSend.append("chemical_composition", chemical_composition);
+    formDataToSend.append("loudness", loudness);
+    formDataToSend.append("duration", duration);
+    formDataToSend.append("safety_distance", safety_distance);
+    formDataToSend.append("visual_effects", visual_effects);
+    formDataToSend.append("how_to_ignite", how_to_ignite);
     formDataToSend.append("product_type", formData.product_type);
     formDataToSend.append("box_count", Math.max(1, Number.parseInt(formData.box_count) || 1));
     if (isEdit) {
@@ -334,7 +475,28 @@ export default function List() {
         setProducts((prev) =>
           prev.map((p) =>
             p.id === selectedProduct.id && p.product_type === selectedProduct.product_type
-              ? { ...p, productname: formData.productname, serial_number: formData.serial_number, price: formData.price, dprice: formData.dprice, discount: formData.discount, per: formData.per, description: formData.description, box_count: Math.max(1, Number.parseInt(formData.box_count) || 1), images: result.images || formData.existingImages.concat(formData.images) }
+              ? {
+                  ...p,
+                  productname: formData.productname,
+                  serial_number: formData.serial_number,
+                  price: formData.price,
+                  dprice: formData.dprice,
+                  discount: formData.discount,
+                  per: formData.per,
+                  description: cleanDesc,
+                  youtube_link: ytLink,
+                  dimension,
+                  colour,
+                  contain,
+                  chemical_composition,
+                  loudness,
+                  duration,
+                  safety_distance,
+                  visual_effects,
+                  how_to_ignite,
+                  box_count: Math.max(1, Number.parseInt(formData.box_count) || 1),
+                  images: result.images || formData.existingImages.concat(formData.images),
+                }
               : p,
           ),
         );
@@ -343,7 +505,7 @@ export default function List() {
       }
       closeModal();
       e.target.reset();
-      setFormData({ productname: "", serial_number: "", price: "", dprice: "", discount: "", per: "", product_type: "", description: "", box_count: 1, images: [], existingImages: [], imagesToDelete: [] });
+      setFormData(INITIAL_FORM_DATA);
     } catch (err) {
       console.error("Error in handleSubmit:", err);
       setError(err.message);
@@ -376,7 +538,7 @@ export default function List() {
     setCategoryModalIsOpen(false);
     setSelectedProduct(null); setProductToDelete(null); setEditedRates({});
     setRateChangeSearchQuery(""); setError(""); setDiscountWarning("");
-    setFormData({ productname: "", serial_number: "", price: "", dprice: "", discount: "", per: "", product_type: "", description: "", box_count: 1, images: [], existingImages: [], imagesToDelete: [] });
+    setFormData({ productname: "", serial_number: "", price: "", dprice: "", discount: "", per: "", product_type: "", description: "", youtube_link: "", dimension: "", colour: "", box_count: 1, images: [], existingImages: [], imagesToDelete: [] });
   };
 
   const capitalize = (str) => str ? str.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ") : "";
@@ -773,7 +935,6 @@ export default function List() {
               { label: "Product Name", name: "productname", type: "text" },
               { label: "Serial Number", name: "serial_number", type: "text" },
               { label: "Price", name: "price", type: "number", step: "0.01" },
-              { label: "Direct Customer Price", name: "dprice", type: "number", step: "0.01" },
               { label: "Discount (%)", name: "discount", type: "number", step: "0.01", min: "0", max: "100" },
             ].map(({ label, name, type, step, min, max }) => (
               <div key={name}>
@@ -794,6 +955,147 @@ export default function List() {
               <label className={lc}>Box Count</label>
               <input type="number" name="box_count" value={formData.box_count} onChange={handleInputChange}
                 className={ic} required min="1" />
+            </div>
+            <div className="sm:col-span-1">
+              <label className={lc}>Dimension / Size</label>
+              <input
+                type="text"
+                name="dimension"
+                value={formData.dimension || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. 15 x 10 x 5 cm"
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <label className={lc}>Colour / Visual Effect</label>
+              <input
+                type="text"
+                name="colour"
+                value={formData.colour || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. Multi-Colour, Red & Green"
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={lc}>YouTube Video Link</label>
+              <input
+                type="url"
+                name="youtube_link"
+                value={formData.youtube_link || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                className={ic}
+              />
+              {getYouTubeEmbedUrl(formData.youtube_link) && (
+                <div className="mt-2 p-2.5 bg-red-50/80 rounded-xl border border-red-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0 pr-2">
+                    <FaYoutube className="text-red-600 text-lg shrink-0" />
+                    <span className="text-xs text-red-900 font-medium truncate">Valid YouTube link attached</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveYtVideo({ url: getYouTubeEmbedUrl(formData.youtube_link), title: formData.productname || "Video Preview" })}
+                    className="shrink-0 px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                  >
+                    <FaPlay className="text-[10px]" /> Preview Video
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="sm:col-span-2 pt-2 border-t border-gray-100">
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">
+                Product Specifications Table Details (Displayed under Description)
+              </span>
+            </div>
+            <div className="sm:col-span-1">
+              <label className={lc}>Contain (Pcs / Packaging)</label>
+              <input
+                type="text"
+                name="contain"
+                value={formData.contain || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. 05 Pcs (Per Box)"
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <label className={lc}>Chemical Composition</label>
+              <input
+                type="text"
+                name="chemical_composition"
+                value={formData.chemical_composition || ""}
+                onChange={handleInputChange}
+                placeholder='e.g. "AI", "S", "KNO3", "CHARCOAL", "DEXTRIN"'
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <label className={lc}>Loudness</label>
+              <input
+                type="text"
+                name="loudness"
+                value={formData.loudness || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. Soundless / Moderate Sound"
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <label className={lc}>Duration</label>
+              <input
+                type="text"
+                name="duration"
+                value={formData.duration || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. It lasts for 20 Seconds Each."
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <label className={lc}>Safety Distance</label>
+              <input
+                type="text"
+                name="safety_distance"
+                value={formData.safety_distance || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. To be safe stand at 5 Meters distance"
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <label className={lc}>Visual Effects</label>
+              <input
+                type="text"
+                name="visual_effects"
+                value={formData.visual_effects || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. Fly up in air with Golden drone effect"
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={lc}>How to Ignite?</label>
+              <input
+                type="text"
+                name="how_to_ignite"
+                value={formData.how_to_ignite || ""}
+                onChange={handleInputChange}
+                placeholder="e.g. perfect angle light it with an agarpathi."
+                className={ic}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={lc}>Description</label>
+              <textarea
+                name="description"
+                rows="3"
+                value={formData.description || ""}
+                onChange={handleInputChange}
+                placeholder="Enter product description"
+                className={`${ic} resize-none`}
+              />
             </div>
           </div>
           <div>
@@ -1065,13 +1367,27 @@ export default function List() {
                 <div className="grid onefifty:grid-cols-3 hundred:grid-cols-3 mobile:grid-cols-1 gap-5">
                   {currentProducts.map((product) => {
                     const productKey = `${product.product_type}-${product.id}`;
+                    const ytUrl = extractYoutubeUrl(product);
                     return (
                       <div key={productKey} className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
                         <div className="flex flex-col gap-3">
-                          <div>
-                            <h3 className="text-sm font-bold text-gray-800 truncate">{product.productname}</h3>
-                            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide mt-0.5">{capitalize(product.product_type)}</p>
-                            <p className="text-xs text-gray-400">S/N: {product.serial_number}</p>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-sm font-bold text-gray-800 truncate">{product.productname}</h3>
+                              <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide mt-0.5">{capitalize(product.product_type)}</p>
+                              <p className="text-xs text-gray-400">S/N: {product.serial_number}</p>
+                            </div>
+                            {ytUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setActiveYtVideo({ url: getYouTubeEmbedUrl(ytUrl), title: product.productname })}
+                                className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md border border-red-200 cursor-pointer shadow-xs transition-all"
+                                title="Play YouTube Video"
+                              >
+                                <FaYoutube className="text-red-600 text-sm" />
+                                <span>Video</span>
+                              </button>
+                            )}
                           </div>
                           <div className="flex flex-wrap gap-1.5 justify-center">
                             {product.images.length > 0 ? (
@@ -1111,8 +1427,44 @@ export default function List() {
                               <FaEye className="h-3 w-3" /> View
                             </button>
                             <button onClick={() => {
+                              const ytLink = extractYoutubeUrl(product);
+                              const cleanDesc = (product.description || "")
+                                .replace(/\[yt:https?:\/\/[^\]]+\]/gi, "")
+                                .replace(/\[dim:[^\]]+\]/gi, "")
+                                .replace(/\[col:[^\]]+\]/gi, "")
+                                .replace(/\[contain:[^\]]+\]/gi, "")
+                                .replace(/\[chem:[^\]]+\]/gi, "")
+                                .replace(/\[loud:[^\]]+\]/gi, "")
+                                .replace(/\[dur:[^\]]+\]/gi, "")
+                                .replace(/\[safety:[^\]]+\]/gi, "")
+                                .replace(/\[effect:[^\]]+\]/gi, "")
+                                .replace(/\[ignite:[^\]]+\]/gi, "")
+                                .trim();
                               setSelectedProduct(product);
-                              setFormData({ productname: product.productname, serial_number: product.serial_number, price: product.price, dprice: product.dprice, discount: product.discount, per: product.per, product_type: product.product_type, description: product.description || "", box_count: product.box_count, images: [], existingImages: product.images || [], imagesToDelete: [] });
+                              setFormData({
+                                productname: product.productname,
+                                serial_number: product.serial_number,
+                                price: product.price,
+                                dprice: product.dprice || product.price,
+                                discount: product.discount,
+                                per: product.per,
+                                product_type: product.product_type,
+                                description: cleanDesc,
+                                youtube_link: ytLink,
+                                dimension: product.dimension || "",
+                                colour: product.colour || "",
+                                contain: product.contain || "",
+                                chemical_composition: product.chemical_composition || "",
+                                loudness: product.loudness || "",
+                                duration: product.duration || "",
+                                safety_distance: product.safety_distance || "",
+                                visual_effects: product.visual_effects || "",
+                                how_to_ignite: product.how_to_ignite || "",
+                                box_count: product.box_count,
+                                images: [],
+                                existingImages: product.images || [],
+                                imagesToDelete: []
+                              });
                               setEditModalIsOpen(true);
                             }} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-xs font-semibold transition-colors">
                               <FaEdit className="h-3 w-3" /> Edit
@@ -1154,32 +1506,100 @@ export default function List() {
       <Modal isOpen={modalIsOpen} onRequestClose={closeModal}
         className="fixed inset-0 flex items-center justify-center p-4"
         overlayClassName="fixed inset-0 bg-black/40 backdrop-blur-sm">
-        {selectedProduct && (
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl max-h-screen overflow-y-auto">
-            <h2 className="text-base font-bold text-gray-800 mb-4 text-center">Product Details</h2>
-            <div className="space-y-4">
-              <div className="flex justify-center flex-wrap gap-2">
-                {selectedProduct.images.length > 0 ? selectedProduct.images.map((media, idx) => renderMedia(media, idx, "h-24 w-24")) : <span className="text-gray-400 text-sm">No media</span>}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {["product_type", "serial_number", "productname", "price", "dprice", "per", "discount", "box_count", "status", "description"].map((field) => (
-                  <div key={field} className={field === "description" ? "col-span-2" : ""}>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{capitalize(field.replace("_", " "))}</span>
-                    <p className="text-sm text-gray-800 font-medium mt-0.5">
-                      {field === "price" || field === "dprice" ? `₹${Number.parseFloat(selectedProduct[field]).toFixed(2)}`
-                        : field === "discount" ? `${Number.parseFloat(selectedProduct[field]).toFixed(2)}%`
-                        : field === "description" ? selectedProduct[field] || "—"
-                        : capitalize(String(selectedProduct[field]))}
+        {selectedProduct && (() => {
+          const ytUrl = extractYoutubeUrl(selectedProduct);
+          const cleanDesc = (selectedProduct.description || "")
+            .replace(/\[yt:https?:\/\/[^\]]+\]/gi, "")
+            .replace(/\[dim:[^\]]+\]/gi, "")
+            .replace(/\[col:[^\]]+\]/gi, "")
+            .replace(/\[contain:[^\]]+\]/gi, "")
+            .replace(/\[chem:[^\]]+\]/gi, "")
+            .replace(/\[loud:[^\]]+\]/gi, "")
+            .replace(/\[dur:[^\]]+\]/gi, "")
+            .replace(/\[safety:[^\]]+\]/gi, "")
+            .replace(/\[effect:[^\]]+\]/gi, "")
+            .replace(/\[ignite:[^\]]+\]/gi, "")
+            .trim();
+          return (
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl max-h-screen overflow-y-auto">
+              <h2 className="text-base font-bold text-gray-800 mb-4 text-center">Product Details</h2>
+              <div className="space-y-4">
+                <div className="flex justify-center flex-wrap gap-2">
+                  {selectedProduct.images.length > 0 ? selectedProduct.images.map((media, idx) => renderMedia(media, idx, "h-24 w-24")) : <span className="text-gray-400 text-sm">No media</span>}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {["product_type", "serial_number", "productname", "price", "dprice", "per", "discount", "box_count", "status"].map((field) => (
+                    <div key={field}>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{capitalize(field.replace("_", " "))}</span>
+                      <p className="text-sm text-gray-800 font-medium mt-0.5">
+                        {field === "price" || field === "dprice" ? `₹${Number.parseFloat(selectedProduct[field]).toFixed(2)}`
+                          : field === "discount" ? `${Number.parseFloat(selectedProduct[field]).toFixed(2)}%`
+                          : capitalize(String(selectedProduct[field]))}
+                      </p>
+                    </div>
+                  ))}
+                  {selectedProduct.dimension && (
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Dimension</span>
+                      <p className="text-sm text-gray-800 font-medium mt-0.5">{selectedProduct.dimension}</p>
+                    </div>
+                  )}
+                  {selectedProduct.colour && (
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Colour / Effect</span>
+                      <p className="text-sm text-gray-800 font-medium mt-0.5">{selectedProduct.colour}</p>
+                    </div>
+                  )}
+                  {(selectedProduct.contain || selectedProduct.chemical_composition || selectedProduct.loudness || selectedProduct.duration || selectedProduct.safety_distance || selectedProduct.visual_effects || selectedProduct.how_to_ignite) && (
+                    <div className="col-span-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-2">Specifications Table</span>
+                      <div className="space-y-1.5 text-xs">
+                        {selectedProduct.contain && <div><span className="font-semibold text-gray-600">Contain:</span> <span className="text-gray-800 font-medium">{selectedProduct.contain}</span></div>}
+                        {selectedProduct.chemical_composition && <div><span className="font-semibold text-gray-600">Chemical Composition:</span> <span className="text-gray-800 font-medium">{selectedProduct.chemical_composition}</span></div>}
+                        {selectedProduct.loudness && <div><span className="font-semibold text-gray-600">Loudness:</span> <span className="text-gray-800 font-medium">{selectedProduct.loudness}</span></div>}
+                        {selectedProduct.duration && <div><span className="font-semibold text-gray-600">Duration:</span> <span className="text-gray-800 font-medium">{selectedProduct.duration}</span></div>}
+                        {selectedProduct.safety_distance && <div><span className="font-semibold text-gray-600">Safety Distance:</span> <span className="text-gray-800 font-medium">{selectedProduct.safety_distance}</span></div>}
+                        {selectedProduct.visual_effects && <div><span className="font-semibold text-gray-600">Visual Effects:</span> <span className="text-gray-800 font-medium">{selectedProduct.visual_effects}</span></div>}
+                        {selectedProduct.how_to_ignite && <div><span className="font-semibold text-gray-600">How to Ignite:</span> <span className="text-gray-800 font-medium">{selectedProduct.how_to_ignite}</span></div>}
+                      </div>
+                    </div>
+                  )}
+                  <div className="col-span-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Description</span>
+                    <p className="text-sm text-gray-800 font-medium mt-0.5 whitespace-pre-line">
+                      {cleanDesc || "—"}
                     </p>
                   </div>
-                ))}
+                  {ytUrl && (
+                    <div className="col-span-2 p-3 bg-red-50 rounded-xl border border-red-200">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FaYoutube className="text-red-600 text-lg shrink-0" />
+                          <div className="min-w-0">
+                            <span className="block text-[11px] font-bold uppercase tracking-wider text-red-700">YouTube Video</span>
+                            <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-red-600 hover:underline truncate block">
+                              {ytUrl}
+                            </a>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveYtVideo({ url: getYouTubeEmbedUrl(ytUrl), title: selectedProduct.productname })}
+                          className="shrink-0 px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        >
+                          <FaPlay className="text-[10px]" /> Play
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-5 flex justify-end">
+                <button onClick={closeModal} className={btnGhost}>Close</button>
               </div>
             </div>
-            <div className="mt-5 flex justify-end">
-              <button onClick={closeModal} className={btnGhost}>Close</button>
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </Modal>
 
       {/* Edit Modal */}
@@ -1245,6 +1665,50 @@ export default function List() {
         className="fixed inset-0 flex items-center justify-center p-4 z-50"
         overlayClassName="fixed inset-0 bg-black/40 backdrop-blur-sm z-50">
         {renderCategoryStatusModal()}
+      </Modal>
+
+      {/* YouTube Video Player Modal */}
+      <Modal
+        isOpen={Boolean(activeYtVideo)}
+        onRequestClose={() => setActiveYtVideo(null)}
+        className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-auto"
+        overlayClassName="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+      >
+        {activeYtVideo && (
+          <div className="bg-white rounded-2xl overflow-hidden shadow-2xl max-w-2xl w-full">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <FaYoutube className="text-red-600 text-xl" />
+                <h3 className="font-bold text-gray-800 text-sm truncate max-w-md">{activeYtVideo.title || "Product Video"}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveYtVideo(null)}
+                className="text-gray-400 hover:text-gray-600 font-bold text-lg p-1 px-2 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="relative w-full pb-[56.25%] bg-black">
+              <iframe
+                src={activeYtVideo.url}
+                title={activeYtVideo.title || "Product Video"}
+                className="absolute top-0 left-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+            <div className="p-3 bg-gray-50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setActiveYtVideo(null)}
+                className={btnGhost}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

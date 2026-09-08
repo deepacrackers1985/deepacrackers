@@ -22,17 +22,28 @@ const PageLoader = () => (
   </div>
 );
 
+const INITIAL_PRODUCT_VALUES = {
+  serialNum: '',
+  productName: '',
+  price: '',
+  per: '',
+  discount: '0',
+  youtube_link: '',
+  dimension: '',
+  colour: '',
+  contain: '',
+  chemical_composition: '',
+  loudness: '',
+  duration: '',
+  safety_distance: '',
+  visual_effects: '',
+  how_to_ignite: '',
+  description: '',
+};
+
 export default function Inventory() {
   const [focused, setFocused] = useState({});
-  const [values, setValues] = useState({
-    serialNum: '',
-    productName: '',
-    price: '',
-    dprice: '',
-    per: '',
-    discount: '',
-    description: '',
-  });
+  const [values, setValues] = useState(INITIAL_PRODUCT_VALUES);
   const [productType, setProductType] = useState('');
   const [newProductType, setNewProductType] = useState('');
   const [productTypes, setProductTypes] = useState([]);
@@ -177,14 +188,14 @@ export default function Inventory() {
           setValues((prev) => ({ ...prev, [inputId]: value }));
         }
       }
-    } else if (inputId === 'price' || inputId === 'dprice') {
+    } else if (inputId === 'price') {
       if (value === '') {
         setError('');
         setValues((prev) => ({ ...prev, [inputId]: value }));
       } else {
         const numValue = parseFloat(value);
         if (isNaN(numValue) || numValue < 0) {
-          setError(`${inputId === 'price' ? 'Price' : 'Direct Customer Price'} must be a valid positive number`);
+          setError('Price must be a valid positive number');
           setValues((prev) => ({ ...prev, [inputId]: '0' }));
         } else {
           setError('');
@@ -220,7 +231,7 @@ export default function Inventory() {
 
   const handleProductTypeChange = (event) => {
     setProductType(event.target.value);
-    setValues({ serialNum: '', productName: '', price: '', dprice: '', per: '', discount: '', description: '' });
+    setValues(INITIAL_PRODUCT_VALUES);
     setFocused({});
     setImages([]);
     setError('');
@@ -274,7 +285,7 @@ export default function Inventory() {
       setError('');
       if (productType === productTypeToDelete) {
         setProductType('');
-        setValues({ serialNum: '', productName: '', price: '', dprice: '', per: '', discount: '', description: '' });
+        setValues(INITIAL_PRODUCT_VALUES);
         setImages([]);
         setFocused({});
         setDiscountWarning('');
@@ -297,7 +308,6 @@ export default function Inventory() {
     if (!values.serialNum) missingFields.push('Serial Number');
     if (!values.productName) missingFields.push('Product Name');
     if (!values.price) missingFields.push('Price');
-    if (!values.dprice) missingFields.push('Direct Customer Price');
     if (!values.per) missingFields.push('Per');
     if (!productType) missingFields.push('Product Type');
     if (missingFields.length > 0) {
@@ -305,10 +315,8 @@ export default function Inventory() {
       return;
     }
     const price = parseFloat(values.price);
-    const dprice = parseFloat(values.dprice);
     const discount = values.discount ? parseFloat(values.discount) : 0;
     if (isNaN(price) || price < 0) { setError('Price must be a valid positive number'); return; }
-    if (isNaN(dprice) || dprice < 0) { setError('Direct Customer Price must be a valid positive number'); return; }
     if (values.discount && (isNaN(discount) || discount < 0 || discount > 100)) {
       setError('Discount must be a valid number between 0 and 100%');
       return;
@@ -317,10 +325,47 @@ export default function Inventory() {
     formData.append('serial_number', values.serialNum);
     formData.append('productname', values.productName);
     formData.append('price', values.price);
-    formData.append('dprice', values.dprice);
+    formData.append('dprice', values.price || '0');
     formData.append('per', values.per);
     formData.append('discount', values.discount || '0');
-    formData.append('description', values.description || '');
+
+    // Embed specifications into description for universal fallback compatibility and pass directly
+    const cleanDesc = (values.description || '').trim();
+    const ytLink = (values.youtube_link || '').trim();
+    const dimension = (values.dimension || '').trim();
+    const colour = (values.colour || '').trim();
+    const contain = (values.contain || '').trim();
+    const chemical_composition = (values.chemical_composition || '').trim();
+    const loudness = (values.loudness || '').trim();
+    const duration = (values.duration || '').trim();
+    const safety_distance = (values.safety_distance || '').trim();
+    const visual_effects = (values.visual_effects || '').trim();
+    const how_to_ignite = (values.how_to_ignite || '').trim();
+
+    let fullDesc = cleanDesc;
+    if (contain) fullDesc += `\n[contain:${contain}]`;
+    if (chemical_composition) fullDesc += `\n[chem:${chemical_composition}]`;
+    if (loudness) fullDesc += `\n[loud:${loudness}]`;
+    if (duration) fullDesc += `\n[dur:${duration}]`;
+    if (safety_distance) fullDesc += `\n[safety:${safety_distance}]`;
+    if (visual_effects) fullDesc += `\n[effect:${visual_effects}]`;
+    if (how_to_ignite) fullDesc += `\n[ignite:${how_to_ignite}]`;
+    if (dimension) fullDesc += `\n[dim:${dimension}]`;
+    if (colour) fullDesc += `\n[col:${colour}]`;
+    if (ytLink) fullDesc += `\n[yt:${ytLink}]`;
+
+    formData.append('description', fullDesc.trim());
+    formData.append('youtube_link', ytLink);
+    formData.append('dimension', dimension);
+    formData.append('colour', colour);
+    formData.append('contain', contain);
+    formData.append('chemical_composition', chemical_composition);
+    formData.append('loudness', loudness);
+    formData.append('duration', duration);
+    formData.append('safety_distance', safety_distance);
+    formData.append('visual_effects', visual_effects);
+    formData.append('how_to_ignite', how_to_ignite);
+
     formData.append('product_type', productType);
     if (Array.isArray(images) && images.length > 0) {
       images.forEach(file => formData.append('images', file));
@@ -334,7 +379,7 @@ export default function Inventory() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || result.message || 'Failed to save product');
       setSuccess('Product saved successfully!');
-      setValues({ serialNum: '', productName: '', price: '', dprice: '', per: '', discount: '', description: '' });
+      setValues(INITIAL_PRODUCT_VALUES);
       setImages([]);
       setFocused({});
       setDiscountWarning('');
@@ -396,17 +441,12 @@ export default function Inventory() {
           <input type="text" id="product-name" name="productName" required value={values.productName}
             onChange={(e) => handleChange('productName', e)} onFocus={() => handleFocus('productName')} onBlur={() => handleBlur('productName')} className={ic} />
         </div>
-        <div className="mobile:col-span-6">
+        <div className="mobile:col-span-6 sm:col-span-3">
           <label htmlFor="price" className={lc}>Price (INR) <span className="text-red-400">*</span></label>
           <input type="number" id="price" name="price" required min="0" step="0.01" value={values.price}
             onChange={(e) => handleChange('price', e)} onFocus={() => handleFocus('price')} onBlur={() => handleBlur('price')} className={ic} />
         </div>
-        <div className="mobile:col-span-6">
-          <label htmlFor="dprice" className={lc}>Direct Customer Price (INR) <span className="text-red-400">*</span></label>
-          <input type="number" id="dprice" name="dprice" required min="0" step="0.01" value={values.dprice}
-            onChange={(e) => handleChange('dprice', e)} onFocus={() => handleFocus('dprice')} onBlur={() => handleBlur('dprice')} className={ic} />
-        </div>
-        <div className="mobile:col-span-3">
+        <div className="mobile:col-span-3 sm:col-span-3">
           <label htmlFor="per" className={lc}>Per <span className="text-red-400">*</span></label>
           <select id="per" name="per" required value={values.per}
             onChange={(e) => handleChange('per', e)} onFocus={() => handleFocus('per')} onBlur={() => handleBlur('per')} className={sc}>
@@ -416,17 +456,178 @@ export default function Inventory() {
             <option value="pkt">Pkt</option>
           </select>
         </div>
-        <div className="sm:col-span-3">
+        <div className="mobile:col-span-3 sm:col-span-3">
           <label htmlFor="discount" className={lc}>Discount (%)</label>
           <input type="number" id="discount" name="discount" min="0" max="100" step="0.01" value={values.discount}
             onChange={(e) => handleChange('discount', e)} onFocus={() => handleFocus('discount')} onBlur={() => handleBlur('discount')} className={ic} />
           {discountWarning && <p className="mt-1 text-xs text-red-500">{discountWarning}</p>}
         </div>
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="youtube_link" className={lc}>YouTube Link (Video URL)</label>
+          <input
+            type="url"
+            id="youtube_link"
+            name="youtube_link"
+            value={values.youtube_link}
+            onChange={(e) => handleChange('youtube_link', e)}
+            onFocus={() => handleFocus('youtube_link')}
+            onBlur={() => handleBlur('youtube_link')}
+            placeholder="e.g. https://www.youtube.com/watch?v=..."
+            className={ic}
+          />
+        </div>
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="dimension" className={lc}>Dimension / Size</label>
+          <input
+            type="text"
+            id="dimension"
+            name="dimension"
+            value={values.dimension}
+            onChange={(e) => handleChange('dimension', e)}
+            onFocus={() => handleFocus('dimension')}
+            onBlur={() => handleBlur('dimension')}
+            placeholder="e.g. 15 x 10 x 5 cm or 7 inch"
+            className={ic}
+          />
+        </div>
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="colour" className={lc}>Colour / Visual Effect</label>
+          <input
+            type="text"
+            id="colour"
+            name="colour"
+            value={values.colour}
+            onChange={(e) => handleChange('colour', e)}
+            onFocus={() => handleFocus('colour')}
+            onBlur={() => handleBlur('colour')}
+            placeholder="e.g. Multi-Colour, Golden Sparkles, Red & Green"
+            className={ic}
+          />
+        </div>
+
+        {/* Specifications Table Section (Displayed on Product Card & Description Table) */}
+        <div className="mobile:col-span-6 pt-3 pb-1 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-800">
+              Product Specifications Table Details (Displayed under Description)
+            </h4>
+          </div>
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            Fill these attributes to display the exact colored specification table for this product.
+          </p>
+        </div>
+
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="contain" className={lc}>Contain / Pack Contents</label>
+          <input
+            type="text"
+            id="contain"
+            name="contain"
+            value={values.contain}
+            onChange={(e) => handleChange('contain', e)}
+            onFocus={() => handleFocus('contain')}
+            onBlur={() => handleBlur('contain')}
+            placeholder="e.g. 05 Pcs (Per Box)"
+            className={ic}
+          />
+        </div>
+
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="chemical_composition" className={lc}>Chemical Composition</label>
+          <input
+            type="text"
+            id="chemical_composition"
+            name="chemical_composition"
+            value={values.chemical_composition}
+            onChange={(e) => handleChange('chemical_composition', e)}
+            onFocus={() => handleFocus('chemical_composition')}
+            onBlur={() => handleBlur('chemical_composition')}
+            placeholder='e.g. "AI", "S", "KNO3", "CHARCOAL", "DEXTRIN"'
+            className={ic}
+          />
+        </div>
+
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="loudness" className={lc}>Loudness</label>
+          <input
+            type="text"
+            id="loudness"
+            name="loudness"
+            value={values.loudness}
+            onChange={(e) => handleChange('loudness', e)}
+            onFocus={() => handleFocus('loudness')}
+            onBlur={() => handleBlur('loudness')}
+            placeholder="e.g. Soundless / Medium / High Decibel"
+            className={ic}
+          />
+        </div>
+
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="duration" className={lc}>Duration</label>
+          <input
+            type="text"
+            id="duration"
+            name="duration"
+            value={values.duration}
+            onChange={(e) => handleChange('duration', e)}
+            onFocus={() => handleFocus('duration')}
+            onBlur={() => handleBlur('duration')}
+            placeholder="e.g. It lasts for 20 Seconds Each."
+            className={ic}
+          />
+        </div>
+
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="safety_distance" className={lc}>Safety Distance</label>
+          <input
+            type="text"
+            id="safety_distance"
+            name="safety_distance"
+            value={values.safety_distance}
+            onChange={(e) => handleChange('safety_distance', e)}
+            onFocus={() => handleFocus('safety_distance')}
+            onBlur={() => handleBlur('safety_distance')}
+            placeholder="e.g. To be safe stand at 5 Meters distance"
+            className={ic}
+          />
+        </div>
+
+        <div className="mobile:col-span-6 sm:col-span-3">
+          <label htmlFor="visual_effects" className={lc}>Visual Effects</label>
+          <input
+            type="text"
+            id="visual_effects"
+            name="visual_effects"
+            value={values.visual_effects}
+            onChange={(e) => handleChange('visual_effects', e)}
+            onFocus={() => handleFocus('visual_effects')}
+            onBlur={() => handleBlur('visual_effects')}
+            placeholder="e.g. Once it is lit, it reaches up the sky Fly up in air with Golden drone effect"
+            className={ic}
+          />
+        </div>
+
         <div className="mobile:col-span-6">
-          <label htmlFor="description" className={lc}>Description</label>
+          <label htmlFor="how_to_ignite" className={lc}>How To Ignite?</label>
+          <input
+            type="text"
+            id="how_to_ignite"
+            name="how_to_ignite"
+            value={values.how_to_ignite}
+            onChange={(e) => handleChange('how_to_ignite', e)}
+            onFocus={() => handleFocus('how_to_ignite')}
+            onBlur={() => handleBlur('how_to_ignite')}
+            placeholder="e.g. perfect angle light it with an agarpathi."
+            className={ic}
+          />
+        </div>
+
+        <div className="mobile:col-span-6">
+          <label htmlFor="description" className={lc}>Description (Paragraph text)</label>
           <textarea id="description" name="description" rows="3" value={values.description}
             onChange={(e) => handleChange('description', e)} onFocus={() => handleFocus('description')} onBlur={() => handleBlur('description')}
-            className={`${ic} resize-none`} placeholder="Enter product description" />
+            className={`${ic} resize-none`} placeholder="Enter product description paragraph (e.g. Dragon Fly are the favorite's crackers to all...)" />
         </div>
         <div className="mobile:col-span-6">
           <label htmlFor="image" className={lc}>Image Upload</label>
@@ -583,7 +784,7 @@ export default function Inventory() {
                     </div>
                     <div className="mt-5 flex justify-end gap-3">
                       <button type="button" onClick={() => {
-                        setValues({ serialNum: '', productName: '', price: '', dprice: '', per: '', discount: '', description: '' });
+                        setValues(INITIAL_PRODUCT_VALUES);
                         setImages([]); setProductType(''); setFocused({}); setDiscountWarning('');
                       }} className="h-9 px-5 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all cursor-pointer">
                         Cancel

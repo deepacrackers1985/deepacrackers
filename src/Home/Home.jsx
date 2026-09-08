@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Phone, Search, ArrowRight, ShieldCheck, FileText, LayoutGrid, List as ListIcon, X, Plus, Minus, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Bot, CheckCircle, MapPin, Tag, Star, Truck, Flame, HelpCircle, Award } from 'lucide-react';
+import { Sparkles, Phone, Search, ArrowRight, ShieldCheck, FileText, LayoutGrid, List as ListIcon, X, Plus, Minus, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Bot, CheckCircle, MapPin, Tag, Star, Truck, Flame, HelpCircle, Award, Play, Maximize2, Minimize2, Info, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -79,6 +79,219 @@ const loadBase64Image = (url) => {
     };
     img.src = firstUrl;
   });
+};
+
+// Default Combo Pack Products matching the Combo Banners
+export const DEFAULT_COMBO_PRODUCTS = [
+  {
+    id: "combo-3000",
+    serial_number: "COMBO-3000",
+    productname: "Diwali Crackers ₹3,000 Combo Box",
+    price: 3000,
+    dprice: 3000,
+    discount: 0,
+    per: "Box",
+    image: "/combo_banner_3000.jpg",
+    product_type: "Combo Box",
+    status: "on",
+    youtube_link: "https://www.youtube.com/watch?v=k2qgadSvNyU",
+    dimension: "Mega Box (42 x 30 x 15 cm)",
+    colour: "Multi-Colour Repeating & Crackling Golden Sparks",
+    description: "Premium Diwali Happiness Mega Box with Repeating Sky Shots, Flower Pots, Sparklers, Fancy Crackers, Sound Bombs, Ground Chakkars & Colour Shots.",
+  },
+  {
+    id: "combo-2000",
+    serial_number: "COMBO-2000",
+    productname: "Diwali Crackers ₹2,000 Combo Box",
+    price: 2000,
+    dprice: 2000,
+    discount: 0,
+    per: "Box",
+    image: "/combo_banner_2000.png",
+    product_type: "Combo Box",
+    status: "on",
+    youtube_link: "https://www.youtube.com/watch?v=e_04ZrNroTo",
+    dimension: "Standard Family Box (35 x 25 x 12 cm)",
+    colour: "Assorted Bright Colors, Red, Green & Gold Spark",
+    description: "Popular Festive Special Diwali Happiness Box with Flower Pots, Sparklers, Ground Chakkars, Rockets, Fancy Crackers, Colour Shots & Sound Crackers.",
+  },
+];
+
+// Helper to extract YouTube URL from product
+export const getProductYoutubeUrl = (product) => {
+  if (!product) return "";
+  if (product.youtube_link && typeof product.youtube_link === "string" && product.youtube_link.trim()) {
+    return product.youtube_link.trim();
+  }
+  const desc = product.description || "";
+  const matchTag = desc.match(/\[yt:(https?:\/\/[^\]]+)\]/i);
+  if (matchTag && matchTag[1]) return matchTag[1].trim();
+  const matchUrl = desc.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)[^\s\)]+)/i);
+  if (matchUrl && matchUrl[1]) return matchUrl[1].trim();
+  return "";
+};
+
+// Helper to extract Dimension from product
+export const getProductDimension = (product) => {
+  if (!product) return "";
+  if (product.dimension && typeof product.dimension === "string" && product.dimension.trim()) {
+    return product.dimension.trim();
+  }
+  const desc = product.description || "";
+  const matchTag = desc.match(/\[dim:([^\]]+)\]/i);
+  if (matchTag && matchTag[1]) return matchTag[1].trim();
+  return "";
+};
+
+// Helper to extract Colour from product
+export const getProductColour = (product) => {
+  if (!product) return "";
+  if (product.colour && typeof product.colour === "string" && product.colour.trim()) {
+    return product.colour.trim();
+  }
+  if (product.color && typeof product.color === "string" && product.color.trim()) {
+    return product.color.trim();
+  }
+  const desc = product.description || "";
+  const matchTag = desc.match(/\[col:([^\]]+)\]/i);
+  if (matchTag && matchTag[1]) return matchTag[1].trim();
+  return "";
+};
+
+// Helper to extract all 7 Product Specification Table fields (matching user's reference image)
+export const getProductSpecs = (product) => {
+  if (!product) {
+    return {
+      contain: "05 Pcs (Per Box)",
+      chemical_composition: '""AI"", ""S"", ""KNO3"", "CHARCOAL", "DEXTRIN""',
+      loudness: "Soundless",
+      duration: "It lasts for 20 Seconds Each.",
+      safety_distance: "To be safe stand at 5 Meters distance",
+      visual_effects: "Once it is lit, it reaches up the sky Fly up in air with Golden drone effect",
+      how_to_ignite: "perfect angle light it with an agarpathi.",
+    };
+  }
+
+  const desc = product.description || "";
+
+  // 1. CONTAIN
+  let contain = (product.contain || "").trim();
+  if (!contain) {
+    const m = desc.match(/\[contain:([^\]]+)\]/i);
+    if (m && m[1]) contain = m[1].trim();
+  }
+  if (!contain) {
+    const count = product.box_count || 1;
+    const per = product.per || "Box";
+    contain = `${String(count).padStart(2, "0")} Pcs (Per ${per})`;
+  }
+
+  // 2. CHEMICAL COMPOSITION
+  let chemical_composition = (product.chemical_composition || "").trim();
+  if (!chemical_composition) {
+    const m = desc.match(/\[chem:([^\]]+)\]/i);
+    if (m && m[1]) chemical_composition = m[1].trim();
+  }
+  if (!chemical_composition) {
+    chemical_composition = '""AI"", ""S"", ""KNO3"", "CHARCOAL", "DEXTRIN""';
+  }
+
+  // 3. LOUDNESS
+  let loudness = (product.loudness || "").trim();
+  if (!loudness) {
+    const m = desc.match(/\[loud:([^\]]+)\]/i);
+    if (m && m[1]) loudness = m[1].trim();
+  }
+  if (!loudness) {
+    const lowerType = String(product.product_type || "").toLowerCase();
+    const lowerName = String(product.productname || "").toLowerCase();
+    if (lowerType.includes("bomb") || lowerType.includes("sound") || lowerName.includes("sound") || lowerName.includes("atom")) {
+      loudness = "High Decibel Sound";
+    } else if (lowerType.includes("sparkler") || lowerType.includes("flower") || lowerName.includes("sparkler") || lowerName.includes("drone") || lowerName.includes("fly")) {
+      loudness = "Soundless";
+    } else {
+      loudness = "Moderate Sound";
+    }
+  }
+
+  // 4. DURATION
+  let duration = (product.duration || "").trim();
+  if (!duration) {
+    const m = desc.match(/\[dur:([^\]]+)\]/i);
+    if (m && m[1]) duration = m[1].trim();
+  }
+  if (!duration) {
+    duration = "It lasts for 20 Seconds Each.";
+  }
+
+  // 5. SAFETY DISTANCE
+  let safety_distance = (product.safety_distance || "").trim();
+  if (!safety_distance) {
+    const m = desc.match(/\[safety:([^\]]+)\]/i);
+    if (m && m[1]) safety_distance = m[1].trim();
+  }
+  if (!safety_distance) {
+    safety_distance = "To be safe stand at 5 Meters distance";
+  }
+
+  // 6. VISUAL EFFECTS
+  let visual_effects = (product.visual_effects || "").trim();
+  if (!visual_effects) {
+    const m = desc.match(/\[effect:([^\]]+)\]/i);
+    if (m && m[1]) visual_effects = m[1].trim();
+  }
+  if (!visual_effects) {
+    const col = getProductColour(product);
+    visual_effects = col ? `Once it is lit, creates brilliant ${col} sparks & aerial effect` : "Once it is lit, it reaches up the sky Fly up in air with Golden drone effect";
+  }
+
+  // 7. HOW TO IGNITE?
+  let how_to_ignite = (product.how_to_ignite || "").trim();
+  if (!how_to_ignite) {
+    const m = desc.match(/\[ignite:([^\]]+)\]/i);
+    if (m && m[1]) how_to_ignite = m[1].trim();
+  }
+  if (!how_to_ignite) {
+    how_to_ignite = "perfect angle light it with an agarpathi.";
+  }
+
+  return {
+    contain,
+    chemical_composition,
+    loudness,
+    duration,
+    safety_distance,
+    visual_effects,
+    how_to_ignite,
+  };
+};
+
+// Helper to get clean description without yt, dim, col, and spec tags
+export const getCleanDescription = (product) => {
+  if (!product || !product.description) return "";
+  return product.description
+    .replace(/\[yt:https?:\/\/[^\]]+\]/gi, "")
+    .replace(/\[dim:[^\]]+\]/gi, "")
+    .replace(/\[col:[^\]]+\]/gi, "")
+    .replace(/\[contain:[^\]]+\]/gi, "")
+    .replace(/\[chem:[^\]]+\]/gi, "")
+    .replace(/\[loud:[^\]]+\]/gi, "")
+    .replace(/\[dur:[^\]]+\]/gi, "")
+    .replace(/\[safety:[^\]]+\]/gi, "")
+    .replace(/\[effect:[^\]]+\]/gi, "")
+    .replace(/\[ignite:[^\]]+\]/gi, "")
+    .trim();
+};
+
+// Helper to convert YouTube URL to embed URL
+export const getYouTubeEmbedUrl = (url) => {
+  if (!url || typeof url !== "string") return "";
+  const trimmed = url.trim();
+  const vMatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/i);
+  if (vMatch && vMatch[1]) {
+    return `https://www.youtube-nocookie.com/embed/${vMatch[1]}?autoplay=1&rel=0&modestbranding=1`;
+  }
+  return "";
 };
 
 // Unique Product Key Generator to prevent cross-category ID collisions
@@ -251,12 +464,13 @@ const ProductCarousel = ({ media, onImageClick, theme }) => {
 
 export default function Home() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(DEFAULT_COMBO_PRODUCTS);
   const [categoryOrder, setCategoryOrder] = useState([]);
   const [banners, setBanners] = useState([]);
   const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedComboFilter, setSelectedComboFilter] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
   const [cart, setCart] = useState({});
@@ -266,7 +480,34 @@ export default function Home() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [lastCompletedOrderId, setLastCompletedOrderId] = useState("");
   const [previewMedia, setPreviewMedia] = useState(null);
+  const [selectedProductModal, setSelectedProductModal] = useState(null); // { prod, initialTab: 'table' | 'video' }
+  const [activeDetailTab, setActiveDetailTab] = useState('table'); // 'table' | 'video'
+  const [isFullScreenVideo, setIsFullScreenVideo] = useState(false);
+  const [activeYtVideo, setActiveYtVideo] = useState(null);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+
+  // Sync tab and reset full screen when selectedProductModal changes
+  useEffect(() => {
+    if (selectedProductModal) {
+      setActiveDetailTab(selectedProductModal.initialTab || 'table');
+      setIsFullScreenVideo(false);
+    }
+  }, [selectedProductModal]);
+
+  // Handle ESC key to exit full screen or close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (isFullScreenVideo) {
+          setIsFullScreenVideo(false);
+        } else if (selectedProductModal) {
+          setSelectedProductModal(null);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullScreenVideo, selectedProductModal]);
 
   // Locations & Promocodes state
   const [states, setStates] = useState([]);
@@ -355,35 +596,52 @@ export default function Home() {
     }
   }, [customer.state]);
 
-  // Unified Banners with Default Combo Box Banner
+  // Unified Banners with Default Combo Box Banners
   const allBanners = useMemo(() => {
-    const defaultCombo = {
-      id: "default-combo-box-banner",
-      isDefaultCombo: true,
-      title: "EXCLUSIVE FESTIVE COMBO BOX",
-      subtitle: "Complete Family Celebration Assortment • Up to 80% Direct Factory Savings",
-      tag: "BEST VALUE • SAVE UP TO 80%",
-      description: "Handcrafted mega packages containing Flower Pots, Sparklers, Chakkars, Sound Bombs & Repeating Sky Shots at direct wholesale prices.",
-      cta: "Shop Combo Box Now",
-      targetCategory: "Combo Box",
-    };
+    const defaultComboBanners = [
+      {
+        id: "default-combo-3000-banner",
+        isDefaultCombo: true,
+        title: "Diwali Crackers ₹3,000 Combo",
+        subtitle: "Bigger Celebration, Brighter Smiles! Diwali Happiness Box",
+        tag: "FESTIVE SPECIAL • ₹3,000 COMBO",
+        image_url: "/combo_banner_3000.jpg",
+        price: "₹3,000",
+        targetPrice: 3000,
+        targetProductId: "combo-3000",
+        cta: "Book ₹3,000 Combo Now",
+        targetCategory: "Combo Box",
+        target_category: "Combo Box",
+      },
+      {
+        id: "default-combo-2000-banner",
+        isDefaultCombo: true,
+        title: "Diwali Crackers ₹2,000 Combo",
+        subtitle: "Celebrate Brighter Together! More Fun, More Smiles Happiness Box",
+        tag: "BEST VALUE • ₹2,000 COMBO",
+        image_url: "/combo_banner_2000.png",
+        price: "₹2,000",
+        targetPrice: 2000,
+        targetProductId: "combo-2000",
+        cta: "Book ₹2,000 Combo Now",
+        targetCategory: "Combo Box",
+        target_category: "Combo Box",
+      },
+    ];
 
     if (!banners || banners.length === 0) {
-      return [defaultCombo];
+      return defaultComboBanners;
     }
 
-    const hasCombo = banners.some(
+    // Filter out duplicates if present in API
+    const otherBanners = banners.filter(
       (b) =>
-        b.title?.toLowerCase().includes("combo") ||
-        b.target_category?.toLowerCase().includes("combo")
+        b.image_url !== "/combo_banner_3000.jpg" &&
+        b.image_url !== "/combo_banner_2000.png"
     );
 
-    if (hasCombo) {
-      return banners;
-    }
-
-    // Always include the default combo box banner first so users can select it
-    return [defaultCombo, ...banners];
+    // Always include the default combo box banners first so users can easily discover them
+    return [...defaultComboBanners, ...otherBanners];
   }, [banners]);
 
   // Auto-rotate banners
@@ -419,7 +677,14 @@ export default function Home() {
       } else if (Array.isArray(prodData)) {
         rawList = prodData;
       }
-      setProducts(rawList.filter(isProductOn));
+      const activeList = rawList.filter(isProductOn);
+      const mergedList = [...DEFAULT_COMBO_PRODUCTS];
+      activeList.forEach((p) => {
+        if (!mergedList.some((cp) => cp.serial_number === p.serial_number || String(cp.id) === String(p.id))) {
+          mergedList.push(p);
+        }
+      });
+      setProducts(mergedList);
 
       if (Array.isArray(catData) && catData.length > 0) {
         setCategoryOrder(catData.map((c) => (typeof c === "string" ? c : c.product_type)));
@@ -455,30 +720,87 @@ export default function Home() {
     return ["All", ...sorted];
   }, [products, categoryOrder]);
 
-  // Category Selection from Banner click with Smooth Scroll to Catalog
-  const handleSelectComboBoxBanner = (targetCat = "Combo Box") => {
-    const comboCat = categories.find(
-      (c) =>
-        c.toLowerCase() === targetCat.toLowerCase() ||
-        c.toLowerCase().includes("combo") ||
-        c.toLowerCase().includes("gift box") ||
-        c.toLowerCase().includes("gift")
-    );
+  // Combo Banner Selection: Adds matching combo product to cart, isolates it in list, and opens checkout
+  const handleSelectComboBoxBanner = (bannerOrTarget = "Combo Box") => {
+    let bannerObj = null;
+    let targetPrice = null;
+    let targetProdId = null;
 
-    if (comboCat) {
-      setSelectedCategory(comboCat);
-      setSearchTerm("");
+    if (bannerOrTarget && typeof bannerOrTarget === "object") {
+      bannerObj = bannerOrTarget;
+      targetPrice = bannerObj.targetPrice || (bannerObj.price ? parseInt(String(bannerObj.price).replace(/\D/g, "")) : null);
+      targetProdId = bannerObj.targetProductId || bannerObj.productId || null;
+    }
+
+    // Always strictly set selectedCategory to "Combo Box" (never "Gift" or "Gift Box")
+    setSelectedCategory("Combo Box");
+    setSearchTerm("");
+
+    // Find the specific matching combo product
+    let targetProduct = null;
+    if (targetProdId) {
+      targetProduct = products.find((p) => String(p.id) === String(targetProdId) || p.serial_number === targetProdId);
+    }
+    if (!targetProduct && targetPrice) {
+      targetProduct = products.find(
+        (p) =>
+          (p.product_type?.toLowerCase().includes("combo") || p.productname?.toLowerCase().includes("combo")) &&
+          !p.product_type?.toLowerCase().includes("gift") &&
+          !p.productname?.toLowerCase().includes("gift") &&
+          Math.abs(parseFloat(p.price || 0) - targetPrice) < 5
+      );
+    }
+    if (!targetProduct && bannerObj?.image_url) {
+      targetProduct = products.find((p) => p.image === bannerObj.image_url);
+    }
+    // Fallback to default combo products if not yet found
+    if (!targetProduct) {
+      if (targetPrice === 3000 || bannerObj?.image_url?.includes("3000")) {
+        targetProduct = products.find((p) => p.id === "combo-3000") || DEFAULT_COMBO_PRODUCTS[0];
+      } else if (targetPrice === 2000 || bannerObj?.image_url?.includes("2000")) {
+        targetProduct = products.find((p) => p.id === "combo-2000") || DEFAULT_COMBO_PRODUCTS[1];
+      } else {
+        targetProduct = products.find(
+          (p) =>
+            (p.product_type?.toLowerCase().includes("combo") || p.productname?.toLowerCase().includes("combo")) &&
+            !p.product_type?.toLowerCase().includes("gift") &&
+            !p.productname?.toLowerCase().includes("gift")
+        );
+      }
+    }
+
+    if (targetProduct) {
+      const uKey = getProductUniqueKey(targetProduct);
+      // Directly add that product to cart
+      setCart((prev) => ({
+        ...prev,
+        [uKey]: Math.max(1, (prev[uKey] || 0) + 1),
+      }));
+
+      // Show strictly ONLY that product in the product list
+      setSelectedComboFilter(uKey);
+
+      // Book it immediately: open checkout modal with cart review & customer details
+      setCheckoutStep(0);
+      setShowCheckoutModal(true);
     } else {
-      setSelectedCategory("Combo Box");
-      setSearchTerm("");
+      setSelectedComboFilter(null);
     }
 
     setTimeout(() => {
       const el = document.getElementById("product-catalog-section");
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        const navOffset = 80;
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = el.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - navOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        });
       }
-    }, 60);
+    }, 80);
   };
 
   // Micro Popper Sparkle Effect on Plus Button (Ultra-Bright & Radiant)
@@ -588,13 +910,35 @@ export default function Home() {
     const term = searchTerm.toLowerCase().trim();
     let list = products.filter(isProductOn);
 
+    // If a specific combo pack was selected from banner, show ONLY that product
+    if (selectedComboFilter) {
+      const singleProduct = list.find(
+        (p) =>
+          getProductUniqueKey(p) === selectedComboFilter ||
+          p.serial_number === selectedComboFilter ||
+          String(p.id) === String(selectedComboFilter)
+      );
+      if (singleProduct) {
+        return [
+          {
+            category: "Combo Box",
+            items: [singleProduct],
+          },
+        ];
+      }
+    }
+
     if (selectedCategory !== "All") {
       if (selectedCategory.toLowerCase().includes("combo")) {
-        list = list.filter(
+        // STRICTLY combo box products only — NEVER include "gift", "gift box", or dealer packs
+        const comboMatches = list.filter(
           (p) =>
-            (p.product_type && p.product_type.toLowerCase().includes("combo")) ||
-            (p.productname && p.productname.toLowerCase().includes("combo"))
+            ((p.product_type && p.product_type.toLowerCase().includes("combo")) ||
+              (p.productname && p.productname.toLowerCase().includes("combo"))) &&
+            (!p.product_type || !p.product_type.toLowerCase().includes("gift")) &&
+            (!p.productname || !p.productname.toLowerCase().includes("gift"))
         );
+        list = comboMatches.length > 0 ? comboMatches : list.filter((p) => p.product_type === selectedCategory);
       } else {
         list = list.filter((p) => p.product_type === selectedCategory);
       }
@@ -612,11 +956,8 @@ export default function Home() {
     const map = {};
     list.forEach((p) => {
       let cat = p.product_type || "General Crackers";
-      if (
-        selectedCategory.toLowerCase().includes("combo") &&
-        (!p.product_type || !p.product_type.toLowerCase().includes("combo"))
-      ) {
-        cat = selectedCategory;
+      if (selectedCategory.toLowerCase().includes("combo")) {
+        cat = "Combo Box";
       }
       if (!map[cat]) map[cat] = [];
       map[cat].push(p);
@@ -635,7 +976,7 @@ export default function Home() {
       category: cat,
       items: map[cat],
     }));
-  }, [products, selectedCategory, searchTerm, categoryOrder]);
+  }, [products, selectedCategory, selectedComboFilter, searchTerm, categoryOrder]);
 
   // Dynamic PDF Pricelist Generator matching Admin Category Sequence with Product Images
   const downloadPDFPricelist = async () => {
@@ -979,7 +1320,7 @@ export default function Home() {
 
         <main className="flex-grow pt-24 pb-20 px-3 md:px-8 max-w-7xl mx-auto w-full space-y-8">
 
-          {/* Banner Slider — Increased Height with Default Combo Box Banner */}
+          {/* Banner Slider — Increased Height with Default Combo Box Banners */}
           <section
             className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
             style={{
@@ -990,157 +1331,128 @@ export default function Home() {
             {/* Red top bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-red-600 z-20" />
 
-            <div className="relative w-full hundred:h-96 mobile:h-44">
+            {/* Increased height in mobile and desktop view so the whole banner images are properly visible */}
+            <div className="relative w-full h-[360px] xs:h-[400px] sm:h-[440px] md:h-[480px] lg:h-[520px] hundred:h-[560px]">
               <AnimatePresence mode="wait">
-                {allBanners[currentBannerIdx]?.isDefaultCombo ? (
-                  <motion.div
-                    key="combo-box-banner"
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.01 }}
-                    transition={{ duration: 0.45 }}
-                    onClick={() => handleSelectComboBoxBanner(allBanners[currentBannerIdx]?.targetCategory || "Combo Box")}
-                    className="w-full h-full px-12 mobile:px-14 hundred:px-16 py-2 hundred:py-8 flex flex-col justify-center relative cursor-pointer group select-none overflow-hidden"
-                    style={{
-                      background: "linear-gradient(135deg, #050505 0%, #140404 50%, #080808 100%)",
-                    }}
-                  >
-                    {/* Atmospheric background graphic accents */}
-                    <div
-                      className="absolute right-0 top-0 bottom-0 w-1/2 pointer-events-none opacity-20 group-hover:opacity-35 transition-opacity duration-500"
-                      style={{
-                        background: "radial-gradient(circle at right center, rgba(220,38,38,0.55) 0%, transparent 70%)",
-                        filter: "blur(60px)",
-                      }}
-                    />
-
-                    {/* Diagonal texture */}
-                    <div
-                      className="absolute inset-0 pointer-events-none opacity-[0.03]"
-                      style={{
-                        backgroundImage: "repeating-linear-gradient(45deg, #ffffff 0, #ffffff 1px, transparent 0, transparent 24px)",
-                      }}
-                    />
-
-                    <div className="relative z-10 max-w-2xl space-y-1 mobile:space-y-1.5 hundred:space-y-3">
-                      {/* Badge */}
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 hundred:px-3.5 hundred:py-1.5 rounded-full text-[9px] hundred:text-[11px] font-black uppercase tracking-widest bg-red-600 text-white border border-red-400 shadow-md">
-                        <Tag className="w-3 h-3 hundred:w-3.5 hundred:h-3.5" />
-                        <span>BESTSELLER • 2025 FESTIVE SPECIAL</span>
-                      </div>
-
-                      {/* Main Title */}
-                      <h2 className="text-base mobile:text-lg hundred:text-4xl font-black uppercase tracking-tight text-white leading-tight">
-                        FESTIVE <span className="text-red-600">COMBO BOX</span>
-                      </h2>
-
-                      {/* Subtitle / Description */}
-                      <p className="text-[10px] mobile:text-xs hundred:text-sm text-neutral-300 max-w-xl leading-tight line-clamp-1 hundred:line-clamp-none">
-                        Handcrafted mega assortment packages with Sparklers, Ground Chakkars, Flower Pots, Bombs &amp; Repeating Sky Shots. Complete family pack at direct Sivakasi wholesale price!
-                      </p>
-
-                      {/* Offer pills */}
-                      <div className="flex flex-wrap items-center gap-1.5 hundred:gap-2 pt-0.5 text-[9px] hundred:text-xs font-bold text-neutral-400">
-                        <span className="px-2 py-0.5 rounded bg-white/10 text-white border border-white/20 font-mono text-[9px] hundred:text-xs">
-                          SAVE UP TO 80%
-                        </span>
-                        <span className="hidden hundred:inline text-neutral-500">•</span>
-                        <span className="hidden hundred:inline">100% Quality Tested</span>
-                        <span className="hidden hundred:inline text-neutral-500">•</span>
-                        <span className="hidden hundred:inline">Direct Factory Sourcing</span>
-                      </div>
-
-                      {/* Action CTA Button */}
-                      <div className="pt-0.5 hundred:pt-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectComboBoxBanner("Combo Box");
-                          }}
-                          className="px-3 py-1.5 hundred:px-6 hundred:py-3 rounded-lg hundred:rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-[10px] mobile:text-xs hundred:text-sm uppercase tracking-wider shadow-[0_4px_25px_rgba(220,38,38,0.5)] flex items-center gap-1.5 hundred:gap-2 border border-red-400 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                        >
-                          <span>Shop Combo Box Now</span>
-                          <ArrowRight className="w-3.5 h-3.5 hundred:w-4 hundred:h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Right Side Visual Box Accent */}
-                    <div className="hidden hundred:flex absolute right-12 top-1/2 -translate-y-1/2 flex-col items-center justify-center p-6 rounded-2xl bg-black/80 border-2 border-white/30 backdrop-blur-md text-center max-w-xs shadow-2xl group-hover:border-red-600 transition-colors">
-                      <div className="w-16 h-16 bg-white rounded-xl p-1 mb-3 border border-white/40 shadow-md flex items-center justify-center overflow-hidden">
-                        <img
-                          src="/logo.png"
-                          alt="Deepa Firecracker Shop"
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <span className="text-xs font-black uppercase text-red-500 tracking-wider">
-                        All-In-One Box
-                      </span>
-                      <span className="text-base font-black text-white mt-1 leading-tight">
-                        Family Mega Hamper
-                      </span>
-                      <span className="text-[10px] text-neutral-400 mt-1">
-                        Limited Festival Allocation
-                      </span>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key={allBanners[currentBannerIdx]?.id || currentBannerIdx}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5 }}
-                    onClick={() => {
-                      if (allBanners[currentBannerIdx]?.target_category) {
-                        handleSelectComboBoxBanner(allBanners[currentBannerIdx].target_category);
+                <motion.div
+                  key={allBanners[currentBannerIdx]?.id || currentBannerIdx}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.01 }}
+                  transition={{ duration: 0.35 }}
+                  onClick={() => {
+                    if (allBanners[currentBannerIdx]?.isDefaultCombo) {
+                      handleSelectComboBoxBanner(allBanners[currentBannerIdx]);
+                    } else if (allBanners[currentBannerIdx]?.link_url) {
+                      window.location.href = allBanners[currentBannerIdx].link_url;
+                    } else {
+                      const el = document.getElementById("product-catalog-section");
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth" });
                       }
-                    }}
-                    className={`w-full h-full ${allBanners[currentBannerIdx]?.target_category ? "cursor-pointer" : ""}`}
-                  >
+                    }
+                  }}
+                  className="w-full h-full relative flex items-center justify-center cursor-pointer select-none group overflow-hidden"
+                  style={{
+                    background: "linear-gradient(135deg, #070707 0%, #150505 50%, #070707 100%)",
+                  }}
+                >
+                  {/* Atmospheric background glow using the current banner image */}
+                  {allBanners[currentBannerIdx]?.image_url && (
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                      <img
+                        src={allBanners[currentBannerIdx]?.image_url}
+                        alt=""
+                        aria-hidden="true"
+                        className="w-full h-full object-cover blur-2xl opacity-40 scale-110 transition-opacity duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/60" />
+                    </div>
+                  )}
+
+                  {/* Main Banner Image - FULL DISPLAY with object-contain to see the whole image properly in mobile & desktop */}
+                  {allBanners[currentBannerIdx]?.image_url ? (
                     <img
                       src={allBanners[currentBannerIdx]?.image_url}
-                      alt={allBanners[currentBannerIdx]?.title || `Banner ${currentBannerIdx + 1}`}
-                      className="w-full h-full object-cover"
+                      alt={allBanners[currentBannerIdx]?.title || `Diwali Crackers Banner ${currentBannerIdx + 1}`}
+                      className="relative z-10 w-full h-full object-contain p-1 sm:p-3 transition-transform duration-500 group-hover:scale-[1.015] drop-shadow-2xl"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/logo.png";
+                      }}
                     />
-                  </motion.div>
-                )}
+                  ) : (
+                    <div className="relative z-10 text-center p-6 space-y-3">
+                      <h2 className="text-2xl sm:text-4xl font-black uppercase text-white">
+                        {allBanners[currentBannerIdx]?.title || "Festive Crackers"}
+                      </h2>
+                      <p className="text-sm text-neutral-300">
+                        {allBanners[currentBannerIdx]?.subtitle || "Special Diwali Assortment"}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Accessible Floating CTA Button - ONLY shown on default combo banners */}
+                  {allBanners[currentBannerIdx]?.isDefaultCombo && (
+                    <div className="absolute bottom-3 right-3 sm:bottom-5 sm:right-6 z-20 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectComboBoxBanner(allBanners[currentBannerIdx]);
+                        }}
+                        className="px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-[0_4px_25px_rgba(220,38,38,0.7)] border border-amber-300/40 flex items-center gap-1.5 sm:gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
+                        title="Click to add and book Diwali Crackers Combo Box"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 animate-pulse shrink-0" />
+                        <span>
+                          {allBanners[currentBannerIdx]?.cta || "Book Combo Now"}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
               </AnimatePresence>
 
               {allBanners.length > 1 && (
                 <>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setCurrentBannerIdx((prev) => (prev === 0 ? allBanners.length - 1 : prev - 1));
                     }}
-                    className="absolute left-2.5 hundred:left-3 top-1/2 -translate-y-1/2 w-8 h-8 hundred:w-10 hundred:h-10 rounded-xl bg-black/80 border border-white/20 text-white flex items-center justify-center hover:border-white/50 hover:bg-red-600 transition-all z-20 cursor-pointer shadow-lg"
+                    aria-label="Previous banner"
+                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black/75 hover:bg-red-600 border border-white/20 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-xl backdrop-blur-sm hover:scale-110 active:scale-95"
                   >
-                    <ChevronLeft className="h-4 w-4 hundred:h-5 hundred:w-5" />
+                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setCurrentBannerIdx((prev) => (prev + 1) % allBanners.length);
                     }}
-                    className="absolute right-2.5 hundred:right-3 top-1/2 -translate-y-1/2 w-8 h-8 hundred:w-10 hundred:h-10 rounded-xl bg-black/80 border border-white/20 text-white flex items-center justify-center hover:border-white/50 hover:bg-red-600 transition-all z-20 cursor-pointer shadow-lg"
+                    aria-label="Next banner"
+                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black/75 hover:bg-red-600 border border-white/20 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-xl backdrop-blur-sm hover:scale-110 active:scale-95"
                   >
-                    <ChevronRight className="h-4 w-4 hundred:h-5 hundred:w-5" />
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
 
-                  <div className="absolute bottom-1.5 hundred:bottom-3.5 left-1/2 -translate-x-1/2 flex gap-1.5 hundred:gap-2 z-20">
+                  <div className="absolute bottom-2.5 sm:bottom-3.5 left-3.5 sm:left-6 flex gap-1.5 sm:gap-2 z-20 bg-black/60 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-sm">
                     {allBanners.map((_, idx) => (
                       <button
                         key={idx}
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setCurrentBannerIdx(idx);
                         }}
-                        className={`h-1.5 hundred:h-2 rounded-full transition-all cursor-pointer ${idx === currentBannerIdx
-                          ? "w-6 hundred:w-8 bg-red-600 shadow-[0_0_8px_#dc2626]"
-                          : "w-1.5 hundred:w-2 bg-white/40 hover:bg-white/70"
+                        aria-label={`Go to slide ${idx + 1}`}
+                        className={`h-1.5 sm:h-2 rounded-full transition-all cursor-pointer ${idx === currentBannerIdx
+                            ? "w-6 sm:w-8 bg-red-600 shadow-[0_0_8px_#dc2626]"
+                            : "w-1.5 sm:w-2 bg-white/40 hover:bg-white/80"
                           }`}
                       />
                     ))}
@@ -1247,11 +1559,14 @@ export default function Home() {
             >
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
                 {categories.map((cat) => {
-                  const isSelected = selectedCategory === cat;
+                  const isSelected = selectedCategory === cat && !selectedComboFilter;
                   return (
                     <button
                       key={cat}
-                      onClick={() => setSelectedCategory(cat)}
+                      onClick={() => {
+                        setSelectedCategory(cat);
+                        setSelectedComboFilter(null);
+                      }}
                       className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all active:scale-95 cursor-pointer ${isSelected
                         ? "bg-red-600 text-white border-red-600"
                         : "bg-black text-neutral-400 border-white/10 hover:border-white/30 hover:text-white"
@@ -1281,6 +1596,42 @@ export default function Home() {
                 />
               </div>
             </div>
+
+            {/* Isolated Product Notice when selected from Combo Banner */}
+            {selectedComboFilter && (
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-gradient-to-r from-red-950/90 via-neutral-900 to-black border border-red-500/50 text-xs shadow-lg">
+                <div className="flex items-center gap-2.5 text-white">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                  <span className="font-bold text-neutral-300">Isolated Product View:</span>
+                  <span className="text-white font-black bg-red-600/30 px-2 py-0.5 rounded border border-red-500/40">
+                    {products.find((p) => getProductUniqueKey(p) === selectedComboFilter || p.serial_number === selectedComboFilter || String(p.id) === String(selectedComboFilter))?.productname || "Combo Box"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCheckoutStep(0);
+                      setShowCheckoutModal(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-black text-xs transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                  >
+                    <span>Open Booking Details</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedComboFilter(null);
+                      setSelectedCategory("Combo Box");
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition-all cursor-pointer"
+                  >
+                    Show All Combo Boxes
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Products */}
             {loading ? (
@@ -1322,6 +1673,11 @@ export default function Home() {
                             const netPrice = discount > 0 ? Math.round(price * (1 - discount / 100)) : price;
                             const tamilName = translateProduct(prod.productname);
                             const theme = getProductTheme();
+                            const ytUrl = getProductYoutubeUrl(prod);
+                            const ytEmbedUrl = getYouTubeEmbedUrl(ytUrl);
+                            const cleanDesc = getCleanDescription(prod);
+                            const dim = getProductDimension(prod);
+                            const col = getProductColour(prod);
 
                             return (
                               <Card3D key={uKey}>
@@ -1340,8 +1696,37 @@ export default function Home() {
 
                                   <div className="space-y-3 relative z-10">
                                     {/* Product Image */}
-                                    <div className="rounded-xl overflow-hidden border border-white/10">
+                                    <div className="rounded-xl overflow-hidden border border-white/10 relative group/img">
                                       <ProductCarousel media={prod.image || prod.images} onImageClick={setPreviewMedia} theme={theme} />
+
+                                      {/* Top-Right Exclamatory '!' Button for Specifications & Description Table */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedProductModal({ prod, initialTab: 'table' });
+                                        }}
+                                        className="absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-black text-sm flex items-center justify-center shadow-lg border border-amber-300 transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer"
+                                        title="View Product Specifications & Table Details (!)"
+                                        aria-label="Product specifications table"
+                                      >
+                                        !
+                                      </button>
+
+                                      {ytEmbedUrl && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedProductModal({ prod, initialTab: 'video' });
+                                          }}
+                                          className="absolute bottom-2 right-2 z-20 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600/90 hover:bg-red-600 text-white text-[11px] font-bold shadow-lg backdrop-blur-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                                          title="Watch video demo"
+                                        >
+                                          <Play className="w-3 h-3 fill-current" />
+                                          <span>Video</span>
+                                        </button>
+                                      )}
                                     </div>
 
                                     {/* Serial & Discount badges */}
@@ -1386,6 +1771,61 @@ export default function Home() {
                                         <p className="text-xs text-neutral-500 line-clamp-1 mt-0.5">
                                           {tamilName}
                                         </p>
+                                      )}
+                                    </div>
+
+                                    {/* Dimension & Colour badges if available */}
+                                    {(dim || col) && (
+                                      <div className="flex flex-wrap gap-1.5 text-[10px]">
+                                        {dim && (
+                                          <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-300 font-medium">
+                                            📐 {dim}
+                                          </span>
+                                        )}
+                                        {col && (
+                                          <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 font-medium">
+                                            🎨 {col}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Product Description text */}
+                                    {cleanDesc && (
+                                      <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.08]">
+                                        <p className="text-[11px] text-neutral-300 line-clamp-2 leading-relaxed font-normal">
+                                          {cleanDesc}
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {/* Action Buttons: Specs Table & Video */}
+                                    <div className="flex items-center gap-1.5 pt-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedProductModal({ prod, initialTab: 'table' });
+                                        }}
+                                        className="flex-1 py-1.5 px-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 hover:border-amber-500/60 text-amber-400 hover:text-amber-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+                                        title="View Table Specifications"
+                                      >
+                                        <span className="w-4 h-4 rounded-full bg-amber-400 text-black font-black text-[10px] flex items-center justify-center leading-none">!</span>
+                                        <span>Specs</span>
+                                      </button>
+                                      {ytEmbedUrl && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedProductModal({ prod, initialTab: 'video' });
+                                          }}
+                                          className="flex-1 py-1.5 px-2 rounded-xl bg-red-600/15 hover:bg-red-600/25 border border-red-500/30 hover:border-red-500/60 text-red-400 hover:text-red-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+                                          title="Watch Full Video"
+                                        >
+                                          <Play className="w-3.5 h-3.5 fill-current text-red-500" />
+                                          <span>Video</span>
+                                        </button>
                                       )}
                                     </div>
                                   </div>
@@ -1480,6 +1920,11 @@ export default function Home() {
                                 const discount = parseFloat(prod.discount || 0);
                                 const netPrice = discount > 0 ? Math.round(price * (1 - discount / 100)) : price;
                                 const tamilName = translateProduct(prod.productname);
+                                const ytUrl = getProductYoutubeUrl(prod);
+                                const ytEmbedUrl = getYouTubeEmbedUrl(ytUrl);
+                                const cleanDesc = getCleanDescription(prod);
+                                const dim = getProductDimension(prod);
+                                const col = getProductColour(prod);
 
                                 return (
                                   <tr key={uKey} className="hover:bg-white/[0.02] transition-colors">
@@ -1487,8 +1932,51 @@ export default function Home() {
                                       #{prod.serial_number || prod.id}
                                     </td>
                                     <td className="p-3 border-r border-white/10">
-                                      <span className="font-bold text-white block">{prod.productname}</span>
-                                      {tamilName && <span className="text-[11px] block mt-0.5 text-neutral-500">{tamilName}</span>}
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-bold text-white block">{prod.productname}</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => setSelectedProductModal({ prod, initialTab: 'table' })}
+                                              className="w-5 h-5 rounded-full bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-400 font-black text-[11px] inline-flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+                                              title="View Specifications & Dimensions Table (!)"
+                                            >
+                                              !
+                                            </button>
+                                          </div>
+                                          {tamilName && <span className="text-[11px] block mt-0.5 text-neutral-500">{tamilName}</span>}
+                                          {(dim || col) && (
+                                            <div className="flex flex-wrap gap-2 text-[10px] mt-1 text-neutral-400 font-medium">
+                                              {dim && <span className="text-neutral-300">📐 {dim}</span>}
+                                              {col && <span className="text-amber-300">🎨 {col}</span>}
+                                            </div>
+                                          )}
+                                          {cleanDesc && <span className="text-[11px] block mt-1 text-neutral-400 line-clamp-1">{cleanDesc}</span>}
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                          <button
+                                            type="button"
+                                            onClick={() => setSelectedProductModal({ prod, initialTab: 'table' })}
+                                            className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 text-[10px] font-bold cursor-pointer transition-all active:scale-95"
+                                            title="View Specifications Table"
+                                          >
+                                            <span className="w-3.5 h-3.5 rounded-full bg-amber-400 text-black font-black text-[9px] flex items-center justify-center leading-none">!</span>
+                                            <span>Specs</span>
+                                          </button>
+                                          {ytEmbedUrl && (
+                                            <button
+                                              type="button"
+                                              onClick={() => setSelectedProductModal({ prod, initialTab: 'video' })}
+                                              className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 text-[10px] font-bold cursor-pointer transition-all active:scale-95"
+                                              title="Watch product video"
+                                            >
+                                              <Play className="w-2.5 h-2.5 fill-current text-red-500" />
+                                              <span>Video</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
                                     </td>
                                     <td className="p-3 text-neutral-600 line-through border-r border-white/10">
                                       Rs.{price.toFixed(2)}
@@ -1758,7 +2246,7 @@ export default function Home() {
                 >
                   <button
                     onClick={() => setPreviewMedia(null)}
-                    className="absolute top-3 right-3 text-white bg-red-600 hover:bg-red-500 border border-red-500 rounded-xl p-1 shadow-md z-10"
+                    className="absolute top-3 right-3 text-white bg-red-600 hover:bg-red-500 border border-red-500 rounded-xl p-1 shadow-md z-10 cursor-pointer"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -1778,6 +2266,572 @@ export default function Home() {
               </div>
             )}
           </AnimatePresence>
+
+          {/* ================================================================ */}
+          {/* PRODUCT SPECIFICATIONS TABLE & FULL SCREEN VIDEO MODAL             */}
+          {/* ================================================================ */}
+          {(() => {
+            const modalProd = selectedProductModal?.prod;
+            if (!modalProd) return null;
+
+            const modalYtUrl = getProductYoutubeUrl(modalProd);
+            const modalEmbedUrl = getYouTubeEmbedUrl(modalYtUrl);
+            const modalCleanDesc = getCleanDescription(modalProd);
+            const modalDimension = getProductDimension(modalProd);
+            const modalColour = getProductColour(modalProd);
+            const modalSpecs = getProductSpecs(modalProd);
+            const modalPrice = parseFloat(modalProd?.price || 0);
+            const modalDiscount = parseFloat(modalProd?.discount || 0);
+            const modalNetPrice = modalDiscount > 0 ? Math.round(modalPrice * (1 - modalDiscount / 100)) : modalPrice;
+            const modalUniqueKey = getProductUniqueKey(modalProd);
+            const modalQty = cart[modalUniqueKey] || 0;
+
+            return (
+              <>
+                {/* Full-Screen Video Viewport Overlay */}
+                <AnimatePresence>
+                  {isFullScreenVideo && modalEmbedUrl && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-[99999] bg-black flex flex-col w-screen h-screen"
+                    >
+                      {/* Full-Screen Top Header Bar */}
+                      <div className="w-full bg-neutral-950/95 backdrop-blur-md px-4 py-3 border-b border-white/10 flex items-center justify-between z-10 shrink-0">
+                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                          <span className="w-8 h-8 rounded-xl bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-500 shrink-0">
+                            <Play className="w-4 h-4 fill-current" />
+                          </span>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-white text-sm sm:text-base tracking-tight truncate">
+                              {modalProd.productname}
+                            </h3>
+                            <p className="text-[11px] text-neutral-400 truncate">
+                              {formatCategoryName(modalProd.product_type || '')} • Full Screen Live Demonstration
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setIsFullScreenVideo(false)}
+                            className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                            title="Exit Full Screen (Esc)"
+                          >
+                            <Minimize2 className="w-4 h-4" />
+                            <span className="hidden sm:inline">Exit Full Screen</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsFullScreenVideo(false);
+                              setSelectedProductModal(null);
+                            }}
+                            className="w-8 h-8 rounded-xl bg-red-600 hover:bg-red-500 text-white flex items-center justify-center transition-colors cursor-pointer"
+                            title="Close"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* YouTube Video iframe filling 100% viewport */}
+                      <div className="flex-1 w-full h-full bg-black relative">
+                        <iframe
+                          src={modalEmbedUrl}
+                          title={modalProd.productname}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                          allowFullScreen
+                        />
+                      </div>
+
+                      {/* Full-Screen Bottom Control Strip */}
+                      <div className="bg-neutral-950/95 backdrop-blur-md px-4 py-2.5 border-t border-white/10 flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-base sm:text-lg font-black text-white">
+                            Rs.{modalNetPrice.toFixed(2)}
+                          </span>
+                          {modalDiscount > 0 && (
+                            <span className="text-xs text-neutral-500 line-through">
+                              Rs.{modalPrice.toFixed(2)}
+                            </span>
+                          )}
+                          <span className="text-xs text-neutral-400">/{modalProd.per || 'Box'}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsFullScreenVideo(false);
+                              setActiveDetailTab('table');
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold cursor-pointer transition-all flex items-center gap-1"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Specs Table</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => updateQuantity(modalProd, 1, e)}
+                            className="px-4 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95"
+                          >
+                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>{modalQty > 0 ? `In Cart (${modalQty}) +` : 'Add to List'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Standard Modal View (Specs Table & Video Tab) */}
+                <AnimatePresence>
+                  {selectedProductModal && !isFullScreenVideo && (
+                    <div
+                      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+                      onClick={() => setSelectedProductModal(null)}
+                    >
+                      <motion.div
+                        initial={{ scale: 0.93, opacity: 0, y: 15 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.93, opacity: 0, y: 15 }}
+                        className="bg-neutral-950 rounded-3xl border border-white/20 shadow-2xl max-w-2xl w-full overflow-hidden relative flex flex-col my-auto max-h-[92vh]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Modal Header */}
+                        <div className="p-3.5 sm:p-4 border-b border-white/10 bg-neutral-900/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-8 h-8 rounded-full bg-amber-500 text-black font-black text-base flex items-center justify-center shrink-0 shadow-md">
+                              !
+                            </span>
+                            <div className="min-w-0">
+                              <h3 className="font-bold text-white text-sm sm:text-base tracking-tight truncate">
+                                {modalProd.productname}
+                              </h3>
+                              <p className="text-[11px] text-neutral-400 truncate">
+                                {translateProduct(modalProd.productname) || formatCategoryName(modalProd.product_type || '')} • #{modalProd.serial_number || modalProd.id}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                            {/* Tab Switchers */}
+                            <div className="flex items-center bg-black/50 p-1 rounded-xl border border-white/10">
+                              <button
+                                type="button"
+                                onClick={() => setActiveDetailTab('table')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                  activeDetailTab === 'table'
+                                    ? 'bg-amber-500 text-black shadow-md'
+                                    : 'text-neutral-400 hover:text-white'
+                                }`}
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Specs Table</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setActiveDetailTab('video')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 relative ${
+                                  activeDetailTab === 'video'
+                                    ? 'bg-red-600 text-white shadow-md'
+                                    : 'text-neutral-400 hover:text-white'
+                                }`}
+                              >
+                                <Play className="w-3.5 h-3.5 fill-current" />
+                                <span>Video Tab</span>
+                                {modalEmbedUrl && (
+                                  <span className="w-2 h-2 rounded-full bg-red-400 animate-ping absolute -top-0.5 -right-0.5" />
+                                )}
+                              </button>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedProductModal(null)}
+                              className="w-8 h-8 rounded-xl bg-white/10 hover:bg-red-600 border border-white/10 text-neutral-300 hover:text-white flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                              title="Close"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+                          {activeDetailTab === 'table' ? (
+                            /* ================= TAB 1: NORMAL SPECIFICATIONS & DESCRIPTION TABLE ================= */
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                                    Product Specifications
+                                  </span>
+                                  <span className="text-xs text-neutral-400">
+                                    Official Sivakasi Manufacturing Standard
+                                  </span>
+                                </div>
+                                {modalEmbedUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveDetailTab('video')}
+                                    className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 font-semibold cursor-pointer underline"
+                                  >
+                                    <Play className="w-3 h-3 fill-current" />
+                                    <span>Watch Video Tab</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Normal Vertical Specifications Table (Fits full width, no horizontal scrolling) */}
+                              <div className="overflow-hidden rounded-2xl border border-white/15 bg-neutral-900/90 shadow-xl">
+                                <table className="w-full text-left text-xs sm:text-sm">
+                                  <tbody className="divide-y divide-white/10">
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 w-2/5 sm:w-1/3 bg-white/[0.02]">
+                                        Product Name
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-white font-bold">
+                                        <div>{modalProd.productname}</div>
+                                        {translateProduct(modalProd.productname) && (
+                                          <div className="text-xs text-neutral-400 font-normal mt-0.5">
+                                            {translateProduct(modalProd.productname)}
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Product Code / ID
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-mono font-bold text-amber-400">
+                                        #{modalProd.serial_number || modalProd.id}
+                                      </td>
+                                    </tr>
+
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Category
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-neutral-200 font-medium">
+                                        {formatCategoryName(modalProd.product_type || 'Standard')}
+                                      </td>
+                                    </tr>
+
+                                    {/* Contain */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Contain
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-white font-semibold">
+                                        {modalSpecs.contain}
+                                      </td>
+                                    </tr>
+
+                                    {/* Chemical Composition */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Chemical Composition
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-neutral-200">
+                                        {modalSpecs.chemical_composition}
+                                      </td>
+                                    </tr>
+
+                                    {/* Loudness */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Loudness
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-white font-medium">
+                                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 font-semibold text-xs">
+                                          {modalSpecs.loudness}
+                                        </span>
+                                      </td>
+                                    </tr>
+
+                                    {/* Duration */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Duration
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-white font-medium">
+                                        {modalSpecs.duration}
+                                      </td>
+                                    </tr>
+
+                                    {/* Safety Distance */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Safety Distance
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-amber-300 font-medium">
+                                        {modalSpecs.safety_distance}
+                                      </td>
+                                    </tr>
+
+                                    {/* Visual Effects */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Visual Effects
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-neutral-200 leading-relaxed">
+                                        {modalSpecs.visual_effects}
+                                      </td>
+                                    </tr>
+
+                                    {/* How to Ignite? */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        How to Ignite?
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-cyan-300 font-medium">
+                                        {modalSpecs.how_to_ignite}
+                                      </td>
+                                    </tr>
+
+                                    {/* Dimension */}
+                                    {modalDimension && (
+                                      <tr className="hover:bg-white/[0.03] transition-colors">
+                                        <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                          📐 Dimension / Size
+                                        </td>
+                                        <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-white font-semibold">
+                                          {modalDimension}
+                                        </td>
+                                      </tr>
+                                    )}
+
+                                    {/* Colour */}
+                                    {modalColour && (
+                                      <tr className="hover:bg-white/[0.03] transition-colors">
+                                        <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                          🎨 Colour / Effect
+                                        </td>
+                                        <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-white font-semibold">
+                                          {modalColour}
+                                        </td>
+                                      </tr>
+                                    )}
+
+                                    {/* Packaging Unit */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Packaging Unit
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-neutral-200 uppercase font-medium">
+                                        1 {modalProd.per || 'Box / Pkt'}
+                                      </td>
+                                    </tr>
+
+                                    {/* Wholesale Rate */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Wholesale Rate
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4">
+                                        <div className="flex items-baseline gap-2">
+                                          <span className="text-base sm:text-lg font-black text-white">
+                                            Rs.{modalNetPrice.toFixed(2)}
+                                          </span>
+                                          {modalDiscount > 0 && (
+                                            <>
+                                              <span className="text-xs text-neutral-500 line-through">
+                                                Rs.{modalPrice.toFixed(2)}
+                                              </span>
+                                              <span className="text-xs font-bold text-red-500 bg-red-500/15 px-1.5 py-0.5 rounded border border-red-500/30">
+                                                {modalDiscount}% OFF
+                                              </span>
+                                            </>
+                                          )}
+                                          <span className="text-xs text-neutral-400">/{modalProd.per || 'Box'}</span>
+                                        </div>
+                                      </td>
+                                    </tr>
+
+                                    {/* Safety Certification */}
+                                    <tr className="hover:bg-white/[0.03] transition-colors">
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02]">
+                                        Safety Standard
+                                      </td>
+                                      <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-emerald-400 font-semibold">
+                                        <div className="flex items-center gap-1.5">
+                                          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                                          <span>CSIR-NEERI Green Cracker Certified (Low Smoke & Safe)</span>
+                                        </div>
+                                      </td>
+                                    </tr>
+
+                                    {/* Description */}
+                                    {modalCleanDesc && (
+                                      <tr className="hover:bg-white/[0.03] transition-colors">
+                                        <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 font-semibold text-neutral-400 bg-white/[0.02] align-top">
+                                          Description
+                                        </td>
+                                        <td className="py-2.5 sm:py-3 px-3.5 sm:px-4 text-neutral-200 leading-relaxed">
+                                          {modalCleanDesc}
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+
+                              {/* Highlights Strip */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-2.5">
+                                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                                  <span className="text-neutral-300">Direct Sivakasi Factory Wholesale Price</span>
+                                </div>
+                                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-2.5">
+                                  <Award className="w-4 h-4 text-red-400 shrink-0" />
+                                  <span className="text-neutral-300">100% Tested Safety & Superior Festive Sparkle</span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            /* ================= TAB 2: YOUTUBE VIDEO PLAYER ================= */
+                            <div className="space-y-3">
+                              {modalEmbedUrl ? (
+                                <>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+                                      <span className="text-xs font-bold text-white">Live Product Demonstration</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsFullScreenVideo(true)}
+                                      className="px-3 py-1.5 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95"
+                                      title="Watch video in full size screen"
+                                    >
+                                      <Maximize2 className="w-3.5 h-3.5" />
+                                      <span>Full Size Screen</span>
+                                    </button>
+                                  </div>
+
+                                  {/* 16:9 Video Player */}
+                                  <div className="relative w-full pb-[56.25%] bg-black rounded-2xl overflow-hidden border border-white/15 shadow-2xl">
+                                    <iframe
+                                      src={modalEmbedUrl}
+                                      title={modalProd.productname}
+                                      className="absolute top-0 left-0 w-full h-full border-0"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                                      allowFullScreen
+                                    />
+                                  </div>
+
+                                  {/* Fullscreen CTA callout */}
+                                  <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between gap-3">
+                                    <div>
+                                      <p className="text-xs font-bold text-white">Experience the full burst effect</p>
+                                      <p className="text-[11px] text-neutral-400">Click Full Size Screen to watch the video edge-to-edge.</p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsFullScreenVideo(true)}
+                                      className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-lg active:scale-95 shrink-0"
+                                    >
+                                      <Maximize2 className="w-3.5 h-3.5" />
+                                      <span>Full Screen</span>
+                                    </button>
+                                  </div>
+
+                                  {/* Dimension & Colour under video */}
+                                  {(modalDimension || modalColour) && (
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      {modalDimension && (
+                                        <div className="p-2.5 rounded-xl bg-neutral-900 border border-white/10">
+                                          <span className="text-neutral-400 block text-[10px] uppercase font-bold">Dimension</span>
+                                          <span className="text-white font-semibold">{modalDimension}</span>
+                                        </div>
+                                      )}
+                                      {modalColour && (
+                                        <div className="p-2.5 rounded-xl bg-neutral-900 border border-white/10">
+                                          <span className="text-amber-400 block text-[10px] uppercase font-bold">Colour</span>
+                                          <span className="text-amber-200 font-semibold">{modalColour}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                /* Empty Video State */
+                                <div className="py-12 px-4 text-center rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
+                                  <div className="w-12 h-12 rounded-2xl bg-red-600/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto">
+                                    <Play className="w-6 h-6 stroke-[1.5]" />
+                                  </div>
+                                  <h4 className="font-bold text-white text-sm">Demo Video Coming Soon</h4>
+                                  <p className="text-xs text-neutral-400 max-w-sm mx-auto">
+                                    We are recording high-definition firework demonstration videos for {modalProd.productname}. Please check the specifications table for complete dimensions and colors!
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveDetailTab('table')}
+                                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                                  >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    <span>View Specifications Table</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Modal Sticky Footer */}
+                        <div className="p-3.5 sm:p-4 bg-neutral-900/90 border-t border-white/10 flex items-center justify-between shrink-0">
+                          <div>
+                            <span className="text-xs text-neutral-400">Total Rate: </span>
+                            <span className="text-base sm:text-lg font-black text-white">
+                              Rs.{modalNetPrice.toFixed(2)}
+                            </span>
+                            <span className="text-xs text-neutral-500 ml-1">/{modalProd.per || 'Box'}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {modalQty > 0 ? (
+                              <div className="flex items-center gap-2 bg-neutral-800 border border-white/10 rounded-xl p-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => updateQuantity(modalProd, -1, e)}
+                                  className="w-7 h-7 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white flex items-center justify-center cursor-pointer transition-colors"
+                                >
+                                  <Minus className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="font-bold text-white text-xs px-2">{modalQty}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => updateQuantity(modalProd, 1, e)}
+                                  className="w-7 h-7 rounded-lg bg-red-600 hover:bg-red-500 text-white flex items-center justify-center cursor-pointer transition-colors"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => updateQuantity(modalProd, 1, e)}
+                                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95"
+                              >
+                                <span>Add to List</span>
+                                <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </>
+            );
+          })()}
 
           {/* Cart Summary Bar */}
           <AnimatePresence>
@@ -1848,19 +2902,139 @@ export default function Home() {
                   <div className="space-y-2">
                     <h2 className="text-xl md:text-2xl font-black text-white">Checkout & Order Enquiry</h2>
                     <div className="flex items-center gap-1.5 text-[11px] md:text-xs font-bold overflow-x-auto pb-1">
-                      <span className={`px-2 py-0.5 rounded-lg border whitespace-nowrap ${checkoutStep === 0 ? 'bg-red-600 text-white border-red-500 font-black' : 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>1. Customer Details</span>
+                      <span className={`px-2.5 py-1 rounded-lg border whitespace-nowrap text-xs ${checkoutStep === 0 ? 'bg-red-600 text-white border-red-500 font-black' : 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>1. Review Cart</span>
                       <span className="text-neutral-500">→</span>
-                      <span className={`px-2 py-0.5 rounded-lg border whitespace-nowrap ${checkoutStep === 1 ? 'bg-red-600 text-white border-red-500 font-black' : 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>2. Location & Offer</span>
+                      <span className={`px-2.5 py-1 rounded-lg border whitespace-nowrap text-xs ${checkoutStep === 1 ? 'bg-red-600 text-white border-red-500 font-black' : 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>2. Customer Details</span>
                       <span className="text-neutral-500">→</span>
-                      <span className={`px-2 py-0.5 rounded-lg border whitespace-nowrap ${checkoutStep === 2 ? 'bg-red-600 text-white border-red-500 font-black' : 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>3. Review Products</span>
+                      <span className={`px-2.5 py-1 rounded-lg border whitespace-nowrap text-xs ${checkoutStep === 2 ? 'bg-red-600 text-white border-red-500 font-black' : 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>3. Confirmation</span>
                     </div>
                   </div>
 
                   <form onSubmit={handleCheckoutSubmit} className="space-y-4">
 
-                    {/* Step 0: Customer Personal Details */}
+                    {/* Step 0: ONLY Review Selected Cart Items */}
                     {checkoutStep === 0 && (
                       <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                          <div>
+                            <p className="text-xs font-black text-white uppercase flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-red-500" />
+                              Review Selected Cart Items ({cartItems.length})
+                            </p>
+                            <p className="text-[11px] text-neutral-400">Verify items and quantities before filling customer details</p>
+                          </div>
+                          <span className="text-sm font-black text-red-500">
+                            ₹{totalAmount.toFixed(2)}
+                          </span>
+                        </div>
+
+                        {cartItems.length === 0 ? (
+                          <div className="py-10 text-center space-y-2 rounded-2xl bg-black border border-neutral-800 p-6">
+                            <p className="text-sm font-bold text-neutral-300">Your cart is currently empty.</p>
+                            <p className="text-xs text-neutral-500">Please select a combo box or product from the catalog.</p>
+                          </div>
+                        ) : (
+                          <div className="max-h-72 overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
+                            {cartItems.map((item) => {
+                              const tamilName = translateProduct(item.productname);
+                              return (
+                                <div
+                                  key={item.uniqueKey}
+                                  className="flex items-center justify-between p-3 rounded-2xl bg-black border border-neutral-800 gap-3 shadow-md hover:border-neutral-700 transition-all"
+                                >
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    {renderProductThumbnail(item.image || item.images)}
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-1.5 mb-0.5">
+                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 border border-white/20 text-neutral-300 font-bold">
+                                          #{item.serial_number || item.id}
+                                        </span>
+                                        <p className="text-xs font-bold text-white truncate">{item.productname}</p>
+                                      </div>
+                                      {tamilName && <p className="text-[10px] text-neutral-400 truncate">{tamilName}</p>}
+                                      <p className="text-[11px] text-neutral-400 font-medium">
+                                        ₹{item.netPrice.toFixed(2)} per {item.per || 'Box'}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 shrink-0">
+                                    <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-neutral-950 border border-neutral-800">
+                                      <button
+                                        type="button"
+                                        onClick={() => updateQuantity(item, -1)}
+                                        className="w-6 h-6 rounded-lg bg-neutral-800 text-neutral-300 flex items-center justify-center font-bold text-xs hover:bg-neutral-700 active:scale-95 transition-all"
+                                        title="Decrease quantity"
+                                      >
+                                        -
+                                      </button>
+                                      <span className="w-6 text-center font-black text-xs text-white">
+                                        {item.qty}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => updateQuantity(item, 1, e)}
+                                        className="w-6 h-6 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold text-xs hover:bg-red-500 active:scale-95 transition-all"
+                                        title="Increase quantity"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                    <span className="font-black text-xs sm:text-sm text-white w-20 text-right">
+                                      ₹{item.subtotal.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Subtotal Summary Card */}
+                        <div className="p-3.5 rounded-xl bg-black border border-neutral-800 space-y-1.5 text-xs shadow-inner">
+                          <div className="flex justify-between text-neutral-400">
+                            <span>Total Items Selected:</span>
+                            <span className="font-bold text-white">
+                              {cartItems.reduce((s, i) => s + i.qty, 0)} units ({cartItems.length} varieties)
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-white font-black text-sm pt-1 border-t border-neutral-800">
+                            <span>Cart Estimate Subtotal:</span>
+                            <span className="text-red-500 text-base">₹{totalAmount.toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={cartItems.length === 0}
+                          onClick={() => {
+                            if (cartItems.length === 0) {
+                              alert("Your cart is empty. Please add items to proceed.");
+                              return;
+                            }
+                            setCheckoutStep(1);
+                          }}
+                          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-red-600/30 transition-all border border-amber-300/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                          <span>Proceed to Customer Details</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Step 1: Customer Contact & Delivery Details */}
+                    {checkoutStep === 1 && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                          <div>
+                            <p className="text-xs font-black text-white uppercase">Customer & Delivery Information</p>
+                            <p className="text-[11px] text-neutral-400">Please provide contact details for delivery and booking confirmation</p>
+                          </div>
+                          <span className="text-xs text-neutral-400 font-bold">
+                            Total: <strong className="text-red-400">₹{totalAmount.toFixed(2)}</strong>
+                          </span>
+                        </div>
+
                         <div>
                           <label className="block text-xs font-bold text-neutral-300 uppercase mb-1">Full Name *</label>
                           <input
@@ -1909,60 +3083,34 @@ export default function Home() {
                           ></textarea>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!customer.name || !customer.mobile || customer.mobile.length !== 10 || !customer.address) {
-                              alert("Please fill in Name, 10-digit Mobile Number, and Address.");
-                              return;
-                            }
-                            setCheckoutStep(1);
-                          }}
-                          className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-black text-xs shadow-lg shadow-red-600/30 transition-all border border-red-500"
-                        >
-                          Next: Location, Address & Offers →
-                        </button>
-                      </div>
-                    )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-neutral-300 uppercase mb-1">State *</label>
+                            <select
+                              value={customer.state}
+                              onChange={(e) => setCustomer({ ...customer, state: e.target.value, district: "" })}
+                              className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs focus:outline-none focus:border-red-500"
+                            >
+                              <option value="Tamil Nadu">Tamil Nadu</option>
+                              {states.map((s) => (
+                                <option key={s.id || s.name} value={s.name}>{s.name}</option>
+                              ))}
+                            </select>
+                          </div>
 
-                    {/* Step 1: Location, Address & Offer Summary */}
-                    {checkoutStep === 1 && (
-                      <div className="space-y-4">
-                        {/* Address Review Box */}
-                        <div className="p-3.5 rounded-xl bg-black border border-neutral-800 text-xs space-y-1 shadow-inner">
-                          <p className="font-bold text-red-500 flex items-center gap-1.5">
-                            <MapPin className="h-4 w-4 text-red-500" /> Delivery Target Address:
-                          </p>
-                          <p className="font-bold text-white">{customer.name} ({customer.mobile})</p>
-                          <p className="text-neutral-300 leading-tight">{customer.address}</p>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-neutral-300 uppercase mb-1">State *</label>
-                          <select
-                            value={customer.state}
-                            onChange={(e) => setCustomer({ ...customer, state: e.target.value, district: "" })}
-                            className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs focus:outline-none focus:border-red-500"
-                          >
-                            <option value="Tamil Nadu">Tamil Nadu</option>
-                            {states.map((s) => (
-                              <option key={s.id || s.name} value={s.name}>{s.name}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-neutral-300 uppercase mb-1">District *</label>
-                          <select
-                            value={customer.district}
-                            onChange={(e) => setCustomer({ ...customer, district: e.target.value })}
-                            className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs focus:outline-none focus:border-red-500"
-                          >
-                            <option value="Thiruthuraipoondi">Thiruthuraipoondi</option>
-                            {districts.map((d) => (
-                              <option key={d.id || d.name} value={d.name}>{d.name}</option>
-                            ))}
-                          </select>
+                          <div>
+                            <label className="block text-xs font-bold text-neutral-300 uppercase mb-1">District *</label>
+                            <select
+                              value={customer.district}
+                              onChange={(e) => setCustomer({ ...customer, district: e.target.value })}
+                              className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs focus:outline-none focus:border-red-500"
+                            >
+                              <option value="Thiruthuraipoondi">Thiruthuraipoondi</option>
+                              {districts.map((d) => (
+                                <option key={d.id || d.name} value={d.name}>{d.name}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
 
                         <div>
@@ -1991,31 +3139,47 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => setCheckoutStep(0)}
-                            className="w-1/3 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-bold text-xs shadow-md"
+                            className="w-1/3 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-bold text-xs shadow-md cursor-pointer"
                           >
-                            ← Back
+                            ← Back to Cart
                           </button>
                           <button
                             type="button"
-                            onClick={() => setCheckoutStep(2)}
-                            className="w-2/3 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-black text-xs shadow-lg shadow-red-600/30 border border-red-500"
+                            onClick={() => {
+                              if (!customer.name || !customer.mobile || customer.mobile.length !== 10 || !customer.address) {
+                                alert("Please fill in Name, 10-digit Mobile Number, and Delivery Address.");
+                                return;
+                              }
+                              setCheckoutStep(2);
+                            }}
+                            className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-black text-xs shadow-lg shadow-red-600/30 border border-red-500 cursor-pointer"
                           >
-                            Review Products & Images →
+                            Next: Order Confirmation →
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* Step 2: Product Review with Images & Mobile Optimised View */}
+                    {/* Step 2: Final Order Confirmation & Bill */}
                     {checkoutStep === 2 && (
                       <div className="space-y-4">
                         <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-                          <p className="text-xs font-black text-white uppercase">Review Order Items ({cartItems.length})</p>
-                          <p className="text-[11px] font-bold text-red-500">{customer.district}, {customer.state}</p>
+                          <p className="text-xs font-black text-white uppercase">Confirm Order Enquiry & Details</p>
+                          <span className="text-[11px] font-bold text-red-500">{customer.district}, {customer.state}</span>
                         </div>
 
-                        {/* Product List with Image Thumbnails */}
-                        <div className="max-h-64 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                        {/* Delivery Address Summary Card */}
+                        <div className="p-3.5 rounded-xl bg-black border border-neutral-800 text-xs space-y-1 shadow-inner">
+                          <p className="font-bold text-red-500 flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4 text-red-500" /> Target Delivery Contact:
+                          </p>
+                          <p className="font-bold text-white text-sm">{customer.name} ({customer.mobile})</p>
+                          {customer.email && <p className="text-neutral-400 text-[11px]">{customer.email}</p>}
+                          <p className="text-neutral-300 leading-tight pt-0.5">{customer.address}, {customer.district}, {customer.state}</p>
+                        </div>
+
+                        {/* Products List with Thumbnails */}
+                        <div className="max-h-52 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
                           {cartItems.map((item) => {
                             const tamilName = translateProduct(item.productname);
                             return (
@@ -2028,7 +3192,7 @@ export default function Home() {
                                       <span className="text-xs font-bold text-white truncate">{item.productname}</span>
                                     </div>
                                     {tamilName && <p className="text-[10px] text-neutral-400 truncate">{tamilName}</p>}
-                                    <p className="text-[10px] text-neutral-400">₹{item.netPrice.toFixed(2)} per {item.per || 'pkt'}</p>
+                                    <p className="text-[10px] text-neutral-400">₹{item.netPrice.toFixed(2)} per {item.per || 'pkt'} × {item.qty}</p>
                                   </div>
                                 </div>
 
@@ -2079,7 +3243,7 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => setCheckoutStep(1)}
-                            className="w-1/3 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-bold text-xs shadow-md"
+                            className="w-1/3 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-bold text-xs shadow-md cursor-pointer"
                           >
                             ← Back
                           </button>
@@ -2122,7 +3286,7 @@ export default function Home() {
                 <Sparkles className="w-3.5 h-3.5 text-red-500 animate-pulse" />
                 <span>Direct Sivakasi Factory Fireworks • 100% Certified Green Crackers</span>
               </div>
-              
+
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase leading-tight">
                 Buy Crackers Online <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-amber-400 to-red-600">— Sivakasi Direct Factory Prices</span>
               </h1>
