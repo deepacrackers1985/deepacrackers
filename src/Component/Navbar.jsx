@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sparkles, Phone, Home, ShieldCheck, Truck } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -34,8 +34,43 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [cleanLogoUrl, setCleanLogoUrl] = useState("/logo.png");
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Automatic Background Removal: Converts black pixels to 100% transparent alpha
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = "/logo.png";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i];
+          const g = d[i + 1];
+          const b = d[i + 2];
+          const maxVal = Math.max(r, g, b);
+          // If pixel is black or near-black, strip it to transparent
+          if (maxVal < 25) {
+            d[i + 3] = 0;
+          } else if (maxVal < 55) {
+            d[i + 3] = Math.round(((maxVal - 25) / 30) * 255);
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        setCleanLogoUrl(canvas.toDataURL("image/png"));
+      } catch (e) {
+        // Fallback to /logo.png
+      }
+    };
+  }, []);
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -45,7 +80,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="fixed top-3 left-3 right-3 z-50 rounded-2xl md:rounded-3xl px-4 md:px-6 py-2.5 mx-auto max-w-7xl w-[calc(100%-1.5rem)] backdrop-blur-2xl transition-all duration-300"
+      className="fixed top-2.5 left-3 right-3 z-50 rounded-2xl md:rounded-3xl px-4 sm:px-6 md:px-8 py-3 sm:py-3.5 md:py-4 mx-auto max-w-7xl w-[calc(100%-1.5rem)] backdrop-blur-2xl transition-all duration-300"
       style={{
         background: "rgba(10, 10, 10, 0.96)",
         border: "1.5px solid rgba(255, 255, 255, 0.15)",
@@ -54,30 +89,19 @@ export default function Navbar() {
     >
       {/* 3-Column Professional Header Layout */}
       <div className="flex items-center justify-between w-full gap-3">
-        {/* Left Side: Brand Logo with clearly readable image text + restored previous text */}
+        {/* Left Side: Zoomed, Wide Brand Logo Artwork with Background Removed */}
         <div className="flex-1 flex items-center justify-start">
           <div
             onClick={() => handleNavigate("/")}
-            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none"
+            className="flex items-center cursor-pointer group select-none py-1"
+            title="தீபா வெடி கடை - Deepa Crackers"
           >
-            {/* Real Logo Image — square and focused on lettering */}
-            <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-13 md:h-13 rounded-xl bg-white p-1 flex items-center justify-center border border-white/40 shadow-md group-hover:border-red-500 group-hover:shadow-[0_0_15px_rgba(220,38,38,0.35)] transition-all shrink-0 overflow-hidden">
-              <img
-                src="/logo.png"
-                alt="Deepa Firecracker Shop"
-                className="w-full h-full object-contain rounded-lg transition-transform duration-200 group-hover:scale-105"
-              />
-            </div>
-
-            {/* Restored Previous Brand Text */}
-            <div className="flex flex-col justify-center whitespace-nowrap">
-              <span className="text-sm sm:text-base md:text-lg font-black tracking-tight text-white group-hover:text-red-500 transition-colors leading-none">
-                DEEPA CRACKERS
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-bold text-red-500 tracking-wider uppercase mt-1 leading-none">
-                Since 1984 • Sivakasi
-              </span>
-            </div>
+            <img
+              src={cleanLogoUrl}
+              alt="தீபா வெடி கடை - Deepa Crackers"
+              className="h-12 xs:h-14 sm:h-16 md:h-18 lg:h-20 w-auto max-w-[230px] xs:max-w-[270px] sm:max-w-[380px] md:max-w-[380px] lg:max-w-[420px] object-contain transition-transform duration-200 group-hover:scale-105 drop-shadow-[0_4px_24px_rgba(236,72,153,0.45)]"
+              style={{ mixBlendMode: "screen" }}
+            />
           </div>
         </div>
 
@@ -91,8 +115,8 @@ export default function Navbar() {
                 key={link.name}
                 onClick={() => handleNavigate(link.path)}
                 className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${isActive
-                    ? "bg-red-600 text-white shadow-lg shadow-red-600/30 border border-red-500 scale-105"
-                    : "text-neutral-300 hover:text-white hover:bg-white/10 border border-transparent"
+                  ? "bg-red-600 text-white shadow-lg shadow-red-600/30 border border-red-500 scale-105"
+                  : "text-neutral-300 hover:text-white hover:bg-white/10 border border-transparent"
                   }`}
               >
                 <Icon className={`h-3.5 w-3.5 ${isActive ? "text-white stroke-[2.5]" : "text-neutral-400"}`} />
@@ -151,8 +175,8 @@ export default function Navbar() {
                     key={link.name}
                     onClick={() => handleNavigate(link.path)}
                     className={`w-full py-2.5 px-4 text-left text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-between ${isActive
-                        ? "bg-red-600 text-white border border-red-500 shadow-md shadow-red-600/25"
-                        : "bg-neutral-900 text-neutral-200 border border-white/10 hover:border-white/30"
+                      ? "bg-red-600 text-white border border-red-500 shadow-md shadow-red-600/25"
+                      : "bg-neutral-900 text-neutral-200 border border-white/10 hover:border-white/30"
                       }`}
                   >
                     <div className="flex items-center gap-2.5">

@@ -12,6 +12,7 @@ import Card3D from '../Component/Card3D';
 import WhyDeepaCrackersModal from '../Component/WhyDeepaCrackersModal';
 import SkyShotBookingSuccessModal from '../Component/SkyShotBookingSuccessModal';
 import WhatsAppButton from '../Component/WhatsAppButton';
+import AmazonDiscountBanner from '../Component/AmazonDiscountBanner';
 import { API_BASE_URL } from '../../Config';
 import { translateProduct } from '../utils/tamilTranslation';
 import defaultImage from '../default.jpeg';
@@ -467,7 +468,6 @@ export default function Home() {
   const [products, setProducts] = useState(DEFAULT_COMBO_PRODUCTS);
   const [categoryOrder, setCategoryOrder] = useState([]);
   const [banners, setBanners] = useState([]);
-  const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedComboFilter, setSelectedComboFilter] = useState(null);
@@ -596,20 +596,18 @@ export default function Home() {
     }
   }, [customer.state]);
 
-  // Unified Banners with Default Combo Box Banners
+  // Unified Banners with Amazon & Blinkit Style Discount Cards
   const allBanners = useMemo(() => {
     const defaultComboBanners = [
       {
         id: "default-combo-3000-banner",
         isDefaultCombo: true,
         title: "Diwali Crackers ₹3,000 Combo",
-        subtitle: "Bigger Celebration, Brighter Smiles! Diwali Happiness Box",
-        tag: "FESTIVE SPECIAL • ₹3,000 COMBO",
         image_url: "/combo_banner_3000.jpg",
         price: "₹3,000",
         targetPrice: 3000,
         targetProductId: "combo-3000",
-        cta: "Book ₹3,000 Combo Now",
+        cta: "Book ₹3,000 Combo",
         targetCategory: "Combo Box",
         target_category: "Combo Box",
       },
@@ -617,13 +615,11 @@ export default function Home() {
         id: "default-combo-2000-banner",
         isDefaultCombo: true,
         title: "Diwali Crackers ₹2,000 Combo",
-        subtitle: "Celebrate Brighter Together! More Fun, More Smiles Happiness Box",
-        tag: "BEST VALUE • ₹2,000 COMBO",
         image_url: "/combo_banner_2000.png",
         price: "₹2,000",
         targetPrice: 2000,
         targetProductId: "combo-2000",
-        cta: "Book ₹2,000 Combo Now",
+        cta: "Book ₹2,000 Combo",
         targetCategory: "Combo Box",
         target_category: "Combo Box",
       },
@@ -633,26 +629,26 @@ export default function Home() {
       return defaultComboBanners;
     }
 
-    // Filter out duplicates if present in API
-    const otherBanners = banners.filter(
-      (b) =>
-        b.image_url !== "/combo_banner_3000.jpg" &&
-        b.image_url !== "/combo_banner_2000.png"
-    );
+    // Backend banners uploaded and managed by Admin
+    const backendBanners = banners
+      .filter(
+        (b) =>
+          b.image_url !== "/combo_banner_3000.jpg" &&
+          b.image_url !== "/combo_banner_2000.png"
+      )
+      .map((b) => ({
+        ...b,
+        isDefaultCombo: false,
+        image_url:
+          b.image_url?.startsWith("http") || b.image_url?.startsWith("/")
+            ? b.image_url
+            : `${API_BASE_URL}${b.image_url}`,
+        cta: b.cta || "Shop Now",
+      }));
 
-    // Always include the default combo box banners first so users can easily discover them
-    return [...defaultComboBanners, ...otherBanners];
+    // Place backend banners first, followed by default combo banners
+    return [...backendBanners, ...defaultComboBanners];
   }, [banners]);
-
-  // Auto-rotate banners
-  useEffect(() => {
-    if (allBanners.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentBannerIdx((prev) => (prev + 1) % allBanners.length);
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [allBanners]);
 
   // Fetch Inventory and Category Order Sequence from Admin Backend
   const fetchData = async () => {
@@ -755,10 +751,10 @@ export default function Home() {
     }
     // Fallback to default combo products if not yet found
     if (!targetProduct) {
-      if (targetPrice === 3000 || bannerObj?.image_url?.includes("3000")) {
-        targetProduct = products.find((p) => p.id === "combo-3000") || DEFAULT_COMBO_PRODUCTS[0];
-      } else if (targetPrice === 2000 || bannerObj?.image_url?.includes("2000")) {
+      if (targetPrice === 2000 || targetProdId === "combo-2000") {
         targetProduct = products.find((p) => p.id === "combo-2000") || DEFAULT_COMBO_PRODUCTS[1];
+      } else if (targetPrice === 3000 || targetProdId === "combo-3000") {
+        targetProduct = products.find((p) => p.id === "combo-3000") || DEFAULT_COMBO_PRODUCTS[0];
       } else {
         targetProduct = products.find(
           (p) =>
@@ -1318,149 +1314,17 @@ export default function Home() {
       <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar />
 
-        <main className="flex-grow pt-24 pb-20 px-3 md:px-8 max-w-7xl mx-auto w-full space-y-8">
+        <main className="flex-grow pt-28 sm:pt-32 md:pt-36 pb-20 px-3 md:px-8 max-w-7xl mx-auto w-full space-y-8">
 
-          {/* Banner Slider — Increased Height with Default Combo Box Banners */}
-          <section
-            className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
-            style={{
-              background: "#080808",
-              border: "1.5px solid rgba(255,255,255,0.18)",
+          {/* Amazon & Blinkit Style Discount Ad Banner Carousel */}
+          <AmazonDiscountBanner
+            banners={allBanners}
+            onSelectCombo={handleSelectComboBoxBanner}
+            onSelectCategory={(cat) => {
+              setSelectedCategory(cat);
+              setSearchTerm("");
             }}
-          >
-            {/* Red top bar */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-red-600 z-20" />
-
-            {/* Increased height in mobile and desktop view so the whole banner images are properly visible */}
-            <div className="relative w-full h-[360px] xs:h-[400px] sm:h-[440px] md:h-[480px] lg:h-[520px] hundred:h-[560px]">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={allBanners[currentBannerIdx]?.id || currentBannerIdx}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.01 }}
-                  transition={{ duration: 0.35 }}
-                  onClick={() => {
-                    if (allBanners[currentBannerIdx]?.isDefaultCombo) {
-                      handleSelectComboBoxBanner(allBanners[currentBannerIdx]);
-                    } else if (allBanners[currentBannerIdx]?.link_url) {
-                      window.location.href = allBanners[currentBannerIdx].link_url;
-                    } else {
-                      const el = document.getElementById("product-catalog-section");
-                      if (el) {
-                        el.scrollIntoView({ behavior: "smooth" });
-                      }
-                    }
-                  }}
-                  className="w-full h-full relative flex items-center justify-center cursor-pointer select-none group overflow-hidden"
-                  style={{
-                    background: "linear-gradient(135deg, #070707 0%, #150505 50%, #070707 100%)",
-                  }}
-                >
-                  {/* Atmospheric background glow using the current banner image */}
-                  {allBanners[currentBannerIdx]?.image_url && (
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                      <img
-                        src={allBanners[currentBannerIdx]?.image_url}
-                        alt=""
-                        aria-hidden="true"
-                        className="w-full h-full object-cover blur-2xl opacity-40 scale-110 transition-opacity duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/60" />
-                    </div>
-                  )}
-
-                  {/* Main Banner Image - FULL DISPLAY with object-contain to see the whole image properly in mobile & desktop */}
-                  {allBanners[currentBannerIdx]?.image_url ? (
-                    <img
-                      src={allBanners[currentBannerIdx]?.image_url}
-                      alt={allBanners[currentBannerIdx]?.title || `Diwali Crackers Banner ${currentBannerIdx + 1}`}
-                      className="relative z-10 w-full h-full object-contain p-1 sm:p-3 transition-transform duration-500 group-hover:scale-[1.015] drop-shadow-2xl"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/logo.png";
-                      }}
-                    />
-                  ) : (
-                    <div className="relative z-10 text-center p-6 space-y-3">
-                      <h2 className="text-2xl sm:text-4xl font-black uppercase text-white">
-                        {allBanners[currentBannerIdx]?.title || "Festive Crackers"}
-                      </h2>
-                      <p className="text-sm text-neutral-300">
-                        {allBanners[currentBannerIdx]?.subtitle || "Special Diwali Assortment"}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Accessible Floating CTA Button - ONLY shown on default combo banners */}
-                  {allBanners[currentBannerIdx]?.isDefaultCombo && (
-                    <div className="absolute bottom-3 right-3 sm:bottom-5 sm:right-6 z-20 flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectComboBoxBanner(allBanners[currentBannerIdx]);
-                        }}
-                        className="px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-[0_4px_25px_rgba(220,38,38,0.7)] border border-amber-300/40 flex items-center gap-1.5 sm:gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
-                        title="Click to add and book Diwali Crackers Combo Box"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 animate-pulse shrink-0" />
-                        <span>
-                          {allBanners[currentBannerIdx]?.cta || "Book Combo Now"}
-                        </span>
-                        <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              {allBanners.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentBannerIdx((prev) => (prev === 0 ? allBanners.length - 1 : prev - 1));
-                    }}
-                    aria-label="Previous banner"
-                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black/75 hover:bg-red-600 border border-white/20 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-xl backdrop-blur-sm hover:scale-110 active:scale-95"
-                  >
-                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentBannerIdx((prev) => (prev + 1) % allBanners.length);
-                    }}
-                    aria-label="Next banner"
-                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black/75 hover:bg-red-600 border border-white/20 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-xl backdrop-blur-sm hover:scale-110 active:scale-95"
-                  >
-                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </button>
-
-                  <div className="absolute bottom-2.5 sm:bottom-3.5 left-3.5 sm:left-6 flex gap-1.5 sm:gap-2 z-20 bg-black/60 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-sm">
-                    {allBanners.map((_, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentBannerIdx(idx);
-                        }}
-                        aria-label={`Go to slide ${idx + 1}`}
-                        className={`h-1.5 sm:h-2 rounded-full transition-all cursor-pointer ${idx === currentBannerIdx
-                            ? "w-6 sm:w-8 bg-red-600 shadow-[0_0_8px_#dc2626]"
-                            : "w-1.5 sm:w-2 bg-white/40 hover:bg-white/80"
-                          }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </section>
+          />
 
           {/* Action Bar */}
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -2424,11 +2288,10 @@ export default function Home() {
                               <button
                                 type="button"
                                 onClick={() => setActiveDetailTab('table')}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                                  activeDetailTab === 'table'
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeDetailTab === 'table'
                                     ? 'bg-amber-500 text-black shadow-md'
                                     : 'text-neutral-400 hover:text-white'
-                                }`}
+                                  }`}
                               >
                                 <FileText className="w-3.5 h-3.5" />
                                 <span>Specs Table</span>
@@ -2436,11 +2299,10 @@ export default function Home() {
                               <button
                                 type="button"
                                 onClick={() => setActiveDetailTab('video')}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 relative ${
-                                  activeDetailTab === 'video'
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 relative ${activeDetailTab === 'video'
                                     ? 'bg-red-600 text-white shadow-md'
                                     : 'text-neutral-400 hover:text-white'
-                                }`}
+                                  }`}
                               >
                                 <Play className="w-3.5 h-3.5 fill-current" />
                                 <span>Video Tab</span>
@@ -3451,21 +3313,11 @@ export default function Home() {
             <div className="relative z-10 max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-white p-1 border border-white/40 shadow-md shrink-0 flex items-center justify-center overflow-hidden">
-                    <img
-                      src="/logo.png"
-                      alt="Deepa Firecracker Shop"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <span className="text-base font-black text-white block leading-none">
-                      DEEPA CRACKERS
-                    </span>
-                    <span className="text-[10px] font-bold text-red-500 tracking-wider uppercase mt-1 block leading-none">
-                      Since 1984 • Sivakasi
-                    </span>
-                  </div>
+                  <img
+                    src="/logo.png"
+                    alt="தீபா வெடி கடை - Deepa Crackers"
+                    className="h-12 w-auto max-w-[210px] object-contain drop-shadow-md"
+                  />
                 </div>
                 <div className="h-px w-16 bg-red-600 mb-3" />
                 <p className="text-neutral-400 text-xs leading-relaxed mb-2">Direct Sivakasi wholesale fireworks for every festive occasion.</p>

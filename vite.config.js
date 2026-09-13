@@ -10,17 +10,23 @@ const __dirname = path.dirname(__filename)
 
 // Ensure combo banners from user upload are placed in public
 try {
-  const uploadedDir = 'C:/Users/Gokul Kannan/.gemini/antigravity-ide/brain/eced3f90-77ef-4b8e-9727-d0bc2b474170/.user_uploaded'
-  if (fs.existsSync(uploadedDir)) {
-    const pubDir = path.resolve(__dirname, 'public')
-    const f1 = path.join(uploadedDir, 'media_1788876247793.jpg')
-    const f2 = path.join(uploadedDir, 'media_1788876256353.png')
-    if (fs.existsSync(f1)) {
-      fs.copyFileSync(f1, path.join(pubDir, 'combo_banner_3000.jpg'))
+  const possible3k = [
+    'C:/Users/Gokul Kannan/.gemini/antigravity-ide/brain/ae0d2c74-6f23-4f2e-b05d-e0caaa24c023/.tempmediaStorage/media_1789281135153.jpg',
+    'C:/Users/Gokul Kannan/.gemini/antigravity-ide/brain/ae0d2c74-6f23-4f2e-b05d-e0caaa24c023/.user_uploaded/media_1789280913302.jpg',
+  ];
+  const pubDir = path.resolve(__dirname, 'public');
+  for (const src of possible3k) {
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, path.join(pubDir, 'combo_banner_3000.jpg'));
+      fs.copyFileSync(src, path.join(pubDir, 'combo_banner_3000_portrait.jpg'));
+      break;
     }
-    if (fs.existsSync(f2)) {
-      fs.copyFileSync(f2, path.join(pubDir, 'combo_banner_2000.png'))
-    }
+  }
+  // Copy new Tamil Deepa Vedi Kadai logo
+  const logoUpload = 'C:/Users/Gokul Kannan/.gemini/antigravity-ide/brain/ae0d2c74-6f23-4f2e-b05d-e0caaa24c023/.user_uploaded/media_1789282839093.png';
+  if (fs.existsSync(logoUpload)) {
+    fs.copyFileSync(logoUpload, path.join(pubDir, 'logo.png'));
+    fs.copyFileSync(logoUpload, path.join(pubDir, 'deepa_logo.png'));
   }
 } catch (err) {
   // safe fallback

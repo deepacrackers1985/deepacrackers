@@ -37,21 +37,11 @@ function Footer() {
         {/* Brand */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-white p-1 border border-white/40 shadow-md shrink-0 flex items-center justify-center overflow-hidden">
-              <img
-                src="/logo.png"
-                alt="Deepa Firecracker Shop"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="flex flex-col justify-center">
-              <span className="text-base font-black text-white block leading-none">
-                DEEPA CRACKERS
-              </span>
-              <span className="text-[10px] font-bold text-red-500 tracking-wider uppercase mt-1 block leading-none">
-                Since 1984 • Sivakasi
-              </span>
-            </div>
+            <img
+              src="/logo.png"
+              alt="தீபா வெடி கடை - Deepa Crackers"
+              className="h-12 w-auto max-w-[210px] object-contain drop-shadow-md"
+            />
           </div>
           <div className="h-[2px] w-16 mb-3 bg-red-600" />
           <p className="text-neutral-400 text-xs leading-relaxed mb-2">
